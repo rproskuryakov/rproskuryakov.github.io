@@ -1,0 +1,9 @@
+- title: Email
+  url: mailto://rproskuryakov@gmail.com
+  icon: fas fa-envelope
+- title: GitHub
+  url: https://github.com/rproskuryakov
+  icon: fab fa-github
+- title: LinkedIn
+  url: https://linkedin.com/in/r-proskuryakov
+  icon: fab fa-linkedin
