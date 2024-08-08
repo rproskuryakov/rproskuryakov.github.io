@@ -4,6 +4,7 @@ date: "2019-03-08"
 description: A brief guide to setup KaTeX
 math: true
 title: Math Typesetting
+enableComments: true
 ---
 
 Mathematical notation in a Hugo project can be enabled by using third party JavaScript libraries.
@@ -13,32 +14,25 @@ Mathematical notation in a Hugo project can be enabled by using third party Java
 In this example we will be using [KaTeX](https://katex.org/)
 
 
-**Note:** Use the online reference of [Supported TeX Functions](https://katex.org/docs/supported.html)
-
-{{< math.inline >}}
-
-{{</ math.inline >}}
-
-### Examples
-
-{{< math.inline >}}
-
-<p>
-Inline math: \(\varphi = \dfrac{1+\sqrt5}{2}= 1.6180339887…\)
-</p>
-
-{{</ math.inline >}}
-
-Block math:
+## Using KaTeX via Code Block
 
 ```katex
- \varphi = 1+\frac{1} {1+\frac{1} {1+\frac{1} {1+\cdots} } }
-
+\tag*{(1)} P(E) = {n \choose k} p^k (1-p)^{n-k}
 ```
 
-Inline formulas: {{< katex formula="a^n" inline=true />}}, {{< katex "a^2+b^2=c^2" true />}}.
+```katex
+f(x) = \int_{-\infty}^\infty\hat f(\xi)\,e^{2 \pi i \xi x}\,d\xi
+```
 
+## Using KaTeX via Shortcode
 
+{{< katex >}}
+  \begin{array}{l}
+  E_{o 1}=\frac{1}{2}\left( { target }_{o 1}- { out }_{o 1}\right)^{2}=\frac{1}{2}(0.01-0.75136507)^{2}=0.274811083 \\
+  E_{o 2}=0.023560026 \\
+  E_{ {total }}=E_{o 1}+E_{o 2}=0.274811083+0.023560026=0.298371109
+  \end{array}
+{{< /katex >}}
 
 [//]: # ($${a}^{b} - \overbrace{c}^{d}$$)
 
