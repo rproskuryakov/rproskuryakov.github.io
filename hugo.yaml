@@ -9,7 +9,6 @@ math: true
 theme: archie
 module:
   imports:
-#    - path: github.com/athul/archie
     - path: github.com/hugomods/katex
     - path: github.com/hugomods/google-analytics
     - path: github.com/hugomods/mermaid
@@ -28,7 +27,7 @@ params:
 #  color: light
 #  github: rproskuryakov
 #  linkedin: r-proskuriakov
-#  rss: true
+  rss: true
 #  avatar: noisyrave@gmail.com
 #  name: Rodion Proskuriakov
   social:
@@ -43,9 +42,7 @@ params:
   monoDarkIcon: true
   gravatarCdn: https://cdn.v2ex.com/gravatar/
   math: true
-  localKatex: false
   favicon: favicon.ico
-  appleTouchIcon: apple-touch-icon.png
   giscus:
     repo: rproskuryakov/rproskuryakov.github.io
     repoID: R_kgDOHl3x1Q
@@ -53,9 +50,7 @@ params:
     categoryID: DIC_kwDOHl3x1c4Cfdj1
     mapping: "url"
     inputPosition: "top"
-    analytics:
-      google:
-        SiteVerificationTag: "G-WLK66LY627"
+  googleAnalytics: "G-WLK66LY627"
 
 
 menu:

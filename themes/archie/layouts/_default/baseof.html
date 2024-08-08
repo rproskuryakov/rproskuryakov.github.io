@@ -5,13 +5,8 @@
         <div class="content">
         {{- partial "head.html" . -}}
         {{- block "main" . }}{{- end }}
-
-            <p></p>
-            {{ if .Params.enableComments }}
-                {{ partial "giscus/script" . }}
-        {{ end }}
-
         {{- partial "footer.html" . -}}
         </div>
+        {{ partial "katex/assets/js" . }}
     </body>
 </html>

@@ -1,6 +1,8 @@
 <head lang="{{ .Site.Language.Lang }}">
 	<meta charset="utf-8" />
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	{{ partialCached "google-analytics/index" . }}
+	{{ partial "katex/assets/css" . }}
 	{{- $title := ( .Title ) -}}
 	{{- $siteTitle := ( .Site.Title ) -}}
 	{{- if .IsHome -}}
