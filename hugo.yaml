@@ -1,0 +1,91 @@
+baseURL: https://rproskuryakov.github.io/
+languageCode: en
+DefaultContentLanguage: en
+enableInlineShortcodes: true
+title: ML Engineering Blog
+author: Rodion Proskuriakov
+copyright: Copyright © 2024–2024.
+math: true
+theme: archie
+module:
+  imports:
+#    - path: github.com/athul/archie
+    - path: github.com/hugomods/katex
+    - path: github.com/hugomods/google-analytics
+    - path: github.com/hugomods/mermaid
+    - path: github.com/hugomods/giscus
+params:
+
+  mode: auto
+  useCDN: false
+  subtitle: The blog covering different topics in machine learning and mlops engineering
+#  defaultTheme: auto
+#  ShowCodeCopyButtons: true
+#  ShowToc: true
+#  comments: true
+#  env: production
+#  ShowReadingTime: true
+#  color: light
+#  github: rproskuryakov
+#  linkedin: r-proskuriakov
+#  rss: true
+#  avatar: noisyrave@gmail.com
+#  name: Rodion Proskuriakov
+  social:
+    - name: GitHub
+      icon: github
+      url: https://github.com/rproskuryakov
+    - name: Linkedin
+      icon: linkedin
+      url: https://www.linkedin.com/in/r-proskuriakov
+  disableHLJS: true
+  disablePostNavigation: true
+  monoDarkIcon: true
+  gravatarCdn: https://cdn.v2ex.com/gravatar/
+  math: true
+  localKatex: false
+  favicon: favicon.ico
+  appleTouchIcon: apple-touch-icon.png
+  giscus:
+    repo: rproskuryakov/rproskuryakov.github.io
+    repoID: R_kgDOHl3x1Q
+    category: General
+    categoryID: DIC_kwDOHl3x1c4Cfdj1
+    mapping: "url"
+    inputPosition: "top"
+    analytics:
+      google:
+        SiteVerificationTag: "G-WLK66LY627"
+
+
+menu:
+  main:
+    - name: "Home"
+      url: "/"
+      weight: 1
+    - name: "All posts"
+      url: "/posts"
+      weight: 2
+    - name: "About"
+      url: "/about"
+      weight: 3
+    - name: "Tags"
+      url: "/tags"
+      weight: 4
+#  homeInfoParams:
+#    Title: Hi there wave
+#    Content: Can be Info, links, about...
+#  socialIcons: # optional
+#    - name: "linkedin"
+#      url: "https://www.linkedin.com/in/r-proskuriakov/"
+#    - name: "github"
+#      url: "https://github.com/"
+#  bio:
+#    MLOps Engineer with more than five years of hands-on experience in Natural
+#    Language Processing and Recommender Systems.
+
+#markup:
+#  goldmark:
+#    renderer:
+#      unsafe: true
+
