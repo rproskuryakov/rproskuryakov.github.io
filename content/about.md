@@ -20,3 +20,11 @@ including recommender systems while working at Zvuk, a Russian audio streaming s
 and MLOps engineering during almost two years of experience as a technical consultant at GlowByte Consulting.
 Now I'm gaining even more technical expertise in high-load and big data practices for
 recommender systems while working at Wildberries, the biggest Russian online retailer.
+
+## Areas of interest
+
+- MLOps
+- LLMOps 
+- Recommender systems
+- High-load online model inference
+- Backend development
