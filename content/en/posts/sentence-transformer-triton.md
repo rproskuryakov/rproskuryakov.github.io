@@ -19,18 +19,7 @@ I work in the MLOps team, and I recently got a  task
 to update a fine-tuned retrieval model running on Triton Inference Server.   
 It had poor performance and the customer needed lower latency and higher RPS.  
 The original deployment was on pure PyTorch so I needed to convert model to ONNX and do some optimizations.  
-It was an interesting journey so i decided yo share it with others.  
-  
-## Index  
-- [Overview](#overview)  
-- [Benchmarking Methodology](#benchmarking-methodology)  
-- [Baseline: Python Backend](#baseline-python-backend)  
-- [What is ONNX](#what-is-onnx)  
-- [Connecting parts of the pipeline](#connecting-parts-of-the-pipeline)  
-- [TensorRT Acceleration](#tensorrt-acceleration)  
-- [Performance Comparison](#performance-comparison)  
-- [What's next?](#whats-next)  
-- [Resources](#resources)  
+It was an interesting journey so i decided yo share it with others.
   
 ## Overview  
   
@@ -160,13 +149,9 @@ So how exactly TensorRT Execution Provider does optimize a model during runtime?
 Firstly, it tries to fuse layers as much as it can so the provider   
 can replace them with high-performance one optimized for specific hardware used in runtime.   
   
-But in general, creating an engine from scratch is an expensive operation.   
-After fusing layers the provider performs timing tests to choose the quickest   
-implementations to the actual GPU in runtime.   
-These tests require few inputs so it means that your model will perform very slow   
-in the beginning of a deployment.   
-But this warmup can be done before a model will be ready for requests.   
-Triton model definition have a dedicated section for this.  
+But in general, creating an engine from scratch is an expensive operation. After fusing layers the provider performs timing tests to choose the quickest implementations to the actual GPU in runtime.   
+These tests require few inputs so it means that your model will perform very slow in the beginning of a deployment.   
+But this warmup can be done before a model will be ready for requests. Triton model definition have a dedicated section for this.  
 
 In general you should experiment with `max_workspace_size_bytes` parameter to find the best performance.
   
@@ -250,7 +235,7 @@ If you need more features e.g. built-in support of canary deployments and A/B te
 Seldon Core allows to deploy almost any type of machine learning models.  
 Triton is just one type of the many runtimes supported by Seldon Core.  
   
-# Resources  
+## Resources  
   
 - [Triton Inference Server](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/index.html)  
 - [Triton Backend for the ONNX Runtime](https://github.com/triton-inference-server/onnxruntime_backend)  

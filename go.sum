@@ -1,5 +1,9 @@
 github.com/KaTeX/KaTeX v0.16.11 h1:mJL23AnBPtkm8tT3rAP3nohDJvwQkAejyWiPDDq7Fns=
 github.com/KaTeX/KaTeX v0.16.11/go.mod h1:VI+aE+CVs/VqtbHnuhstfQST46GmrwpXH7LQAzYIouw=
+github.com/hugomods/ascii v0.1.0 h1:c7E0nV3z7PiNchGXkIuFBWsKym17k0iOo+o6Bp6bw30=
+github.com/hugomods/ascii v0.1.0/go.mod h1:vvC2YaCuNBWl/8F/mfk9vMxVpwXluH80cROV9TDpmLk=
+github.com/hugomods/encoder v0.1.0 h1:RIS+pL3F4BHe4WVeYNHeDwbckV60qr9ISI3uM3Qs9yE=
+github.com/hugomods/encoder v0.1.0/go.mod h1:WczOOUq8lPosgSx1b7MXe3MXGighn2goeEFiuqw4ciY=
 github.com/hugomods/giscus v0.1.1 h1:Kb8137Cp2nQJPFb6e+CdXy8nyIAJ2dFIymG4bDdaXWI=
 github.com/hugomods/giscus v0.1.1/go.mod h1:tCRkqNi/sMsLh3kjDesXZNzf4R/w+b5oc5boS/l8Jtw=
 github.com/hugomods/google-analytics v0.2.1 h1:591qgcVeqROhPhmI03YPiGXlb0jaIIqXDxy1HCNwD50=
@@ -10,3 +14,7 @@ github.com/hugomods/katex v0.3.3 h1:TX6Tl5jgYXAXcNWKTC/0vI8p9MSBfwkVMTgJfakM3XA=
 github.com/hugomods/katex v0.3.3/go.mod h1:i+fKI52f3QbiuK0ug5yRCB9ZJ/qUFERTk8UGuSZMQNQ=
 github.com/hugomods/mermaid v0.1.4 h1:/u0FZRSBMpqTbDh4XPBL7c6p0DUjvIkoo9cC89GASSI=
 github.com/hugomods/mermaid v0.1.4/go.mod h1:GOID2Ko1vdrX03ZMaFNQL/vdTU1tZmGcVjOgBN8O42Y=
+github.com/hugomods/seo/modules/base v0.1.3 h1:1RYumYqpmNTamOnoVjhu1u5S8dxx71awYcJaiIuJw60=
+github.com/hugomods/seo/modules/base v0.1.3/go.mod h1:kKuDlSh6uMjNAfe4j1RFQze4HwTHVKWuLIRsMwENqxs=
+github.com/kaiiiz/hugo-theme-monochrome v3.1.0+incompatible h1:oimDf2NbdZPaO1KVC6ACwfRgOSonwRi0Q8S4FQLl300=
+github.com/kaiiiz/hugo-theme-monochrome v3.1.0+incompatible/go.mod h1:la906j3s0e3SFjWmXPM84sX8b/WU1wejqR6XaGmBO2I=
