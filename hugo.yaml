@@ -65,6 +65,11 @@ languages:
           name: Archive
           url: /archive/
           weight: 3
+#      socialIcons: # optional
+#        - name: "linkedin"
+#          url: "https://www.linkedin.com/in/r-proskuriakov/"
+#        - name: "github"
+#          url: "https://github.com/"
   ru:
     contentDir: content/ru
     languageName: Russian
