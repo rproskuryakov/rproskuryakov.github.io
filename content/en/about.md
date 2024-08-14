@@ -5,8 +5,11 @@ title = "About"
 #aliases = ["about-us","about-hugo","contact"]
 #author = "rodion proskuryakov"
 #layout = "about"
+toc = false
 +++
 
+{{< icon vendor="feather" name="github" link="https://github.com/" >}}
+{{< icon vendor="feather" name="linkedin" link="https://github.com/" >}}
 
 Grew up in Siberia, Russia, I entered Novosibirsk State University to study fundamental physics.
 
