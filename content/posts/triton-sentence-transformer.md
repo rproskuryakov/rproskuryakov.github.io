@@ -1,7 +1,7 @@
 +++
 title = "Deploying a Sentence Transformer with Triton Inference Server"
 date = "2024-11-01"
-draft = true
+draft = false
 [taxonomies]
 tags=["triton", "inference", "transformers", "onnxruntime", "tensorrt"]
 
@@ -148,8 +148,8 @@ For an additional quality check during conversion with Optimum,
 you will need to install `accelerate` package.
  
 ```bash  
-optimum-cli export onnx --model intfloat/multilingual-e5-large  \  
- --task feature-extraction  --library-name transformers  --framework pt  converted/
+optimum-cli export onnx --model intfloat/multilingual-e5-large \
+--task feature-extraction  --library-name transformers  --framework pt  converted/
  ```  
   
 Optimum-CLI requires only one argument: the model name or the path to the model. Optionally, you can include a task flag from a predefined list. If this parameter is not provided, Optimum will attempt to infer it automatically from the model. We will also specify the library name and the original framework of the model.  

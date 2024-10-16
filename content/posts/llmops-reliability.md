@@ -1,5 +1,5 @@
 +++
-title = "LLMOps: Secutiry, Privacy, Reliability"
+title = "LLMOps: Security, Privacy, Reliability"
 date = "2025-02-27"
 draft = true
 [taxonomies]

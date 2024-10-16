@@ -1,5 +1,5 @@
 +++
-title = "How to Design an Embedding Storage and Computation System"
+title = "Designing an Embedding Storage and Vector Search System"
 date = "2024-12-01"
 draft = true
 [taxonomies]
