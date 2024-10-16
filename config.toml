@@ -1,0 +1,37 @@
+# The URL the site will be built for
+base_url = "https://rproskuryakov.github.io"
+
+# Whether to automatically compile all Sass files in the sass directory
+compile_sass = true
+
+# Whether to build a search index to be used later on by a JavaScript library
+build_search_index = false
+
+theme = "apollo"
+taxonomies = [{ name = "tags" }]
+generate_feeds = true
+
+[markdown]
+# Whether to do syntax highlighting
+# Theme can be customised by setting the `highlight_theme` variable to a theme supported by Zola
+highlight_code = true
+highlight_theme = "ayu-light"
+
+[extra]
+theme = "light"
+socials = [
+    { name = "linkedin", url = "www.linkedin.com/in/r-proskuriakov", icon = "linkedin" },
+    { name = "github", url = "https://github.com/rproskuryakov", icon = "github" },
+]
+menu = [
+    { name = "/posts", url = "/posts", weight = 1 },
+    { name = "/about", url = "/about", weight = 3 },
+    { name = "/tags", url = "/tags", weight = 4 },
+]
+fancy_code = true
+dynamic_note = true
+comment = true
+mathjax = true
+mathjax_dollar_inline_enable = true
+toc = true
+# Put all your custom variables here
