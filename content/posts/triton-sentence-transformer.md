@@ -1,14 +1,13 @@
 +++
 title = "Deploying a Sentence Transformer with Triton Inference Server"
 date = "2024-11-01"
-comment = false
-draft = false
-
+draft = true
 [taxonomies]
 tags=["triton", "inference", "transformers", "onnxruntime", "tensorrt"]
 
 [extra]
-comment = false
+comment = true
+
 +++
 
 

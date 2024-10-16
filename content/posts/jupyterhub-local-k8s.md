@@ -1,12 +1,11 @@
 +++
 title = "Deploying JupyterHub locally on K8S for development"
 date = "2025-01-15"
-comment = true
 draft = true
 [taxonomies]
 tags=["jupyterhub", "k8s"]
 [extra]
-comment=true
+comment = true
 +++
 
 You need to install [kind](https://kind.sigs.k8s.io/),

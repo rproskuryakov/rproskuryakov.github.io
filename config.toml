@@ -30,7 +30,7 @@ menu = [
 ]
 fancy_code = true
 dynamic_note = true
-comment = true
+#comment = true
 mathjax = true
 mathjax_dollar_inline_enable = true
 toc = true

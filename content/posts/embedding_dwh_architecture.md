@@ -1,12 +1,11 @@
 +++
-title = "How to Build an Embedding Storage and Computation System"
+title = "How to Design an Embedding Storage and Computation System"
 date = "2024-12-01"
-comment = true
 draft = true
 [taxonomies]
 tags=["embeddings", "vector-databases", "architecture"]
 [extra]
-comment=true
+comment = true
 +++
 
 
