@@ -1,4 +1,5 @@
 # The URL the site will be built for
+title = "Rodion Proskuriakov"
 base_url = "https://rproskuryakov.github.io"
 
 # Whether to automatically compile all Sass files in the sass directory
