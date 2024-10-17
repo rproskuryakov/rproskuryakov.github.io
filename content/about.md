@@ -68,7 +68,7 @@ to 3 minutes.
 ## Education
 
 2017-2019 
-:   **Bachelor, Fundamental Physics**; Novosibirsk State University
+:   **BSc, Fundamental Physics**; Novosibirsk State University
 
     Term paper: Study of the effect of calcination temperature on the electrochemical properties of reduced graphite oxide (rGO)
 
