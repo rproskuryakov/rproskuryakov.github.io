@@ -13,9 +13,12 @@ I'm interested in:
 - Computer Architecture
 - Math
 
-I'm an MLOps Engineer with more than 5 years of experience. 
-I work at Wildberries which is the biggest online-retailer in Russia. 
-I've worked on plenty of projects including NLP, ML Engineering and Consulting/Audit projects. 
+As an MLOps Engineer with over 5 years of experience,
+I have had the opportunity to contribute to a wide range of projects,
+including those focused on NLP, machine learning engineering, and consulting/audit.
+Currently, I work at Wildberries, the largest online retailer in Russia,
+where I apply my expertise to drive innovative solutions 
+and optimize machine learning operations.
 
 In my spark time I enjoy swimming.
 
