@@ -48,8 +48,10 @@ JMeter is a strong tool for load testing and does support gRPC requests through 
 However, it requires writing tests in Java, which is too complex for our project.
 
 Therefore, we'll use Locust, which supports gRPC and offers a straightforward Python interface for writing test cases.
-  
-## Baseline: Python Backend  
+
+## Let's speed up the model
+
+### Baseline: Python Backend  
 
 Triton Inference Server supports multiple backends, enabling the deployment of a wide range of models,
 from boosting models to large language models (LLMs).
@@ -142,7 +144,7 @@ output [
 ```  
   
   
-## What is ONNX  
+### What is ONNX  
   
 ONNX is an open-source, hardware-agnostic format for storing and optimizing machine learning models.
 It supports a wide range of neural network architectures as well as some classical models.
@@ -171,7 +173,7 @@ You can view the complete list of accepted parameters [here](https://huggingface
 Let’s verify that the output of the converted model matches the output of the original model.  
 We’ll use absolute and relative error to assess numerical stability following the conversion.
   
-## Connecting parts of the pipeline  
+### Connecting parts of the pipeline  
   
 
 Triton doesn’t automatically handle preprocessing and postprocessing steps,
@@ -185,7 +187,7 @@ Model Ensemble is ideal for pipelines that can be represented as directed acycli
 meaning they have no loops or conditional flows, which works perfectly for our pipeline.
   
   
-## TensorRT Acceleration  
+### TensorRT Acceleration  
   
 It’s widely known that models using FP32 weights can be accelerated by converting them to FP16.
 ONNX Runtime offers a TensorRT Execution Provider,
