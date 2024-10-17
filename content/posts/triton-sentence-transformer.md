@@ -7,7 +7,6 @@ tags=["triton", "inference", "transformers", "onnxruntime", "tensorrt"]
 
 [extra]
 comment = true
-
 +++
 
 
@@ -35,8 +34,16 @@ All the code is available in [this repository](https://github.com/rproskuryakov/
 So, let's get started!
   
 ## Benchmarking Methodology  
-  
-Therefore, I will use [locust.io](https://locust.io/) for this tutorial.  
+
+There are plenty tools for conducting load testing. 
+The most known are [apache http benchmarking tool (ab)](https://httpd.apache.org/docs/2.4/programs/ab.html),
+[JMeter](https://jmeter.apache.org/) and [Locust](https://locust.io/).
+
+Despite AB simplicity it doesn't support GRPC requests, so it does not suit our case.
+JMeter is a standard tool for load testing. It even supports gRPC requests via plugin.
+But JMeter requires to write tests on Java which is too complicated for a non-Java project.
+
+So, we'll use locust as it supports gRPC as well as provide a simple python interface for writing test cases.
   
 ## Baseline: Python Backend  
 
@@ -198,7 +205,7 @@ optimization {
 }  
 ```  
   
-According to [Triton ONNX Runtime Backend docs](https://github.com/triton-inference-server/onnxruntime_backend):  
+According to the [Triton ONNX Runtime Backend docs](https://github.com/triton-inference-server/onnxruntime_backend):  
 * precision_mode: The precision used for optimization. Allowed values are "FP32", "FP16" and "INT8". The default value is "FP32".  
 * max_workspace_size_bytes: The maximum GPU memory the model can use temporarily during execution. The default value is 1GB.  
 * [trt_layer_norm_fp32_fallback](https://onnxruntime.ai/docs/execution-providers/TensorRT-ExecutionProvider.html#trt_layer_norm_fp32_fallback): force Pow + Reduce ops in layer norm to FP32. Allowed values are “true” and “false”.  
@@ -324,11 +331,11 @@ It is also worth noting that there may be compatibility issues between certain v
 which can cause failures when starting the model with `instance_groups[].count` set to more than one, especially if TensorRT acceleration is enabled.
 
 Secondly, you can quantise your model to int8, int4 or even a two-bit format.
-For quantisation to int8, Olive (INSERT-LINK) is a recommended tool for optimising ONNX models for specific hardware.
+For quantisation to int8, [Olive](https://github.com/microsoft/Olive) is a recommended tool for optimising ONNX models for specific hardware.
 
 Alternatively, you can convert a model to TensorRT beforehand and use Triton for inference via [Triton TensorRT backend](https://github.com/triton-inference-server/tensorrt_backend).
 
-To tune Triton parameters for a model to infer on Triton Inference Server, you can employ the [model analyser](https://github.com/triton-inference-server/model_analyzer) and performance analyser (INSERT-LINK).
+To tune Triton parameters for a model to infer on Triton Inference Server, you can employ the [model analyser](https://github.com/triton-inference-server/model_analyzer) and [performance analyser](https://docs.nvidia.com/deeplearning/triton-inference-server/archives/triton-inference-server-2280/user-guide/docs/user_guide/perf_analyzer.html).
 These tools, provided by Triton, help in optimising any model.
 
 [Polygraphy](https://github.com/NVIDIA/TensorRT/tree/main/tools/Polygraphy) is another useful tool for analysing a model,
@@ -350,11 +357,28 @@ Seldon Core supports the deployment of nearly any type of machine learning model
 the Triton is just one of the many runtimes it supports.
 
 You can also try KServer which has a great feature
-to scale deployments to zero if there are not any traffic incoming.
+to scale deployments to zero if there are not any incoming traffic.
 
 ## Bonus: production considerations
 
-opentelemetry, prometheus, seldon-core
+In the real production environment reliability and observability are required. 
+That includes monitoring and scalability. 
+To monitor a model one can use an opentelemetry 
+which is an open-source instrument for collect, export and generate metrics, logs an traces of an application.
+Triton [supports](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/trace.html) opentelemetry generation for traces of inference requests.
+
+Also as a standard observability method you can enable prometheus metrics in Triton.
+Majority of companies use Prometheus as a database for metrics and Grafana for dashboards and alerts.
+Triton [can be set](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/metrics.html) to provide prometheus metrics to collect GPU metrics as well as requests statistics.
+
+Also, in a production environment you'd need to think about scalability. 
+[Seldon-Core](https://github.com/SeldonIO/seldon-core) is one of the instruments to help with that.
+It is a tool dedicated to deployment of machine learning models on Kubernetes.
+Seldon introduces the concept of a server in fact being a backend for a model.
+Servers include scikit-learn, xgboost etc. Also, they include Triton.
+That means you can run any of the Triton instances via Seldon. 
+Seldon out of the box provides scaling, A/B-tests, Canary deployments and many more. 
+
   
 ## Resources  
   
