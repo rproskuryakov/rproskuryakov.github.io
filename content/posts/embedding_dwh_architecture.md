@@ -19,13 +19,28 @@ comment = true
 
 ## Vector Databases 201
 
-vector databases (client-server and embedded; oltp vs olap; indexing strategies; tradeoffs: scaling, performance, ease of integration)
+ indexing strategies; tradeoffs: scaling, performance, ease of integration)
+
+There are two main types of dbms. 
+Client-server is the type we are all familiar. 
+Even more, this type is major in the current systems. 
+
+But, the new (or not so) dbms type emerge. Meet embedded databases.
+Actually, you already know one! SQLite is one. 
+One could argue that sqlite is not built for a production environment.
+
+Also, the dbms can be divided into OLTP (Online Transactional Processing) and OLAP (Online Analytical Processing).
+PostgreSQL is an OLTP example whilst GreenPlum as an OLAP one.
 
 ### Client-server vs Embedded
 
 ### OLTP vs OLAP
 
 ### Indexing strategies
+
+One can balanced latency, recall, storage and overall cost by using different indexing algorithms.
+The most known is HNSW but there a a lot more. People even use quantization to lower
+the vectors' memory requirements and to speed up vector search even more.
 
 ### Tradeoffs
 
@@ -41,27 +56,65 @@ vector databases (client-server and embedded; oltp vs olap; indexing strategies;
 
 ## Choosing storage for Embeddings
 
-- Choosing storage for Embeddings (multi-tier architecture: why to separate, what kind of data to store in each storage)
+It is a wide-used approach to divide a storage to multiple tiers based on 
+the required read/write performance and the cost. There are often two tiers, hot and cold,
+or three tiers, hot, warm and cold accordingly.
+
+Hot storage tier is the most expensive but provides the best performance. 
+This layer is dedicated to online data processing. 
+PostgreSQL for online transactions is a greate example of a hot storage.
+
+Warm storage tier is used for batch processing and OLAP scenarios. 
+It tries to balance middle-performance with middle-costs. 
+ClickHouse or Hadoop are the warm storage examples. 
+Also, any of the DFSs (Distributed File System) could serve a similar purpose.
+
+The last, but not the least, cold storage is used for data that is not accessed on a regular basis.
+This means that cold storage is the cheapest and the least performant one. 
+A standard example is object storage (AWS S3, MinIO, Ceph).
 
 ### Multi-tier Storage
 
 ## Do you need a new data format?
-- Why do you need a new data format? (vector storage formats and why do you need one (lance vs parquet))
-- storage formats: (lance, iceberg, data lake) apache orc, feather (apache arrow), tiledb, zarr
 
-### Parquet
+As we divided our storage to few tiers a new question rise. 
+What data format should be used to store embeddings? 
+Well, let's start with our needs. I'd, personally, like to have a format which:
+- Fast enough for queries including vector search;
+- Compatible with the current processing tools (Spark, Pandas, Polars);
 
-### Lance
+
+Lance is an open-source column-based data storage format designed with ML applications in mind. 
+It is based on parquet and tightly connected to the Apache Arrow ecosystem. 
+That means that Lance files can be read with all the tools you already use for parquet.
+You can load Lance file with pandas as well as polars.
+
+Lance can store the whole datasets in one file. Audio, video and image data can be stored in a binary format.
+
+But the main advantage of Lance is embedding storage and search optimization.
+
+Besides Lance there are a few formats which are arrow-compatible such as Iceberg and Delta Lake. 
+They might be an excellent solution to the general data engineering problem, but their purpose is not
+to make the life of ML Engineers easier. 
+
+Another tools: apache orc, feather (apache arrow), tiledb, zarr
+
+
 
 ## Basics of Big Data Architecture and Why Does It Matter?
-- 
-Basics of Big Data Architecture and Why does it matter? (big data architectures (layers, highlight storage and processing, lambda vs kappa: how they layout to embeddings))
+
 
 ### System Layers
 
+layers, highlight storage and processing,
+
 ### Lambda Architecture
 
+how lambda affect embeddings
+
 ### Kappa Architecture
+
+how kappa affect embeddings
 
 
 
@@ -69,15 +122,22 @@ Basics of Big Data Architecture and Why does it matter? (big data architectures 
 
 ## Additional Considerations
 
-- Additional Consideration (security, dlm, gdpr, ccpa, cloud vs on-premise)
-- feature processing and feature stores
-- your current dwh architecture
-- ease of delivery and migration as well as ease of learning
-- metastore
-- query engines (trino and sparksql)
+You should base your design on the current design of your data architecture. 
+Additionally, ease of migration to a new system and ease of learning can be very important.
+
+The post doesn't cover all requirements you should consider. Things not covered in the post:
+data lifecycle management, gdpr compliance, security (access separation, rbac model), cloud vs on-premise.
+
+You can also think about connecting the embedding storage and search systems with
+your current analytics stack. 
+E.g. you might be using Trino or Presto for ad-hoc queries and there is a need for an integration.
+
+Additional to security considerations if you have enormous amount of embeddings it can be helpful to 
+develop a metastore for embedding discovery inside your party.
+
 - quokka (write oltp data to olap for next analysis)
 
-requirements:
+Finally you need to consider:
 - vector's size
 - application scenario (online/offline/near-offline) – data processing architectures
 - your current dwh architecture
