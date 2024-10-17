@@ -67,7 +67,9 @@ to 3 minutes.
 2017-2019 
 :   **Bachelor, Fundamental Physics**; Novosibirsk State University
 
-    Term paper: Firing temperature influence to electrochemical properties of reduced graphite oxide (rGO)
+    Term paper: Firing temperature influence on electrochemical properties of reduced graphite oxide (rGO)
+
+**GPA:** 4.5 out of 5
 
 # Contact
 
