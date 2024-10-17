@@ -24,15 +24,13 @@ In my spark time I enjoy swimming.
 
 # Work experience
 
-### Wildberries
-
-**Online-retailer**
+### Wildberries, Online-retailer
 
 **MLOps Engineer, April 2024 – present time**
 
-### Zvuk
+* Documented all business processes of the MLOps team using BPMN diagrams
 
-**Audio streaming service**
+### Zvuk, Audio streaming service**
 
 **ML Engineer, RecSys Team, September 2022 – September 2023**
 
@@ -41,8 +39,8 @@ In my spark time I enjoy swimming.
 * Implemented best practises to writing ETL-pipelines with Airflow.
 
 
-### GlowByte Consulting
-**BI & BigData Consulting Company**
+### GlowByte Consulting, BI & BigData Consulting Company
+
 **Senior MLOps Engineer, December 2020 – July 2022, September 2023 – April 2024**
 
 * Conducted research on transferring vector search from a GPU cluster to Spark distributed computations on ~100 billions of embeddings. 
@@ -56,6 +54,7 @@ times.
 
 
 ### LC Group, FinTech Company
+
 **Data Scientist, R&D Department, July 2019 – September 2020**
 
 * Improved the intent classification model score by 8\% with BERT fine-tuning.
