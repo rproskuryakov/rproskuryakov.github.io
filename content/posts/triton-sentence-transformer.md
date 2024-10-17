@@ -13,18 +13,20 @@ comment = true
 
 ## Introduction  
   
-I was recently assigned to update a fine-tuned retrieval model running on the Triton Inference Server.
-The model was underperforming, and the customer required lower latency and a higher requests-per-second (RPS) rate.
-The initial deployment used pure PyTorch, so I needed to convert the model to ONNX and apply some optimisations.
-It was an interesting journey, so I thought I'd share my experience.
+I was recently tasked with updating a fine-tuned retrieval model deployed on the Triton Inference Server.
+The model was underperforming, and the customer needed lower latency and a higher requests-per-second (RPS) rate.
+Since the deployment was written in pure PyTorch, which isn’t the most efficient solution for production, optimization was necessary.
+The process turned out to be quite an interesting journey, so I wanted to share my experience.
 
-You can ask a question. Why do we use a special inference server instead of just packing a model to FastAPI Service?
-Well, there are quite a few reasons. First and foremost, FastAPI isn't developed to be a solution for deploying machine learning models.
-FastAPI is best at what is was meant for: high-load backend services with easy-to-hard business logic. Secondly,
-FastAPI doesn't provide resources control such as GPU utilisation which is essential to ML models performance. 
-Last but not least, if you need advanced optimizations such as dynamic batching, caching and i/o-binding
-you need to write them from scratch. Triton Inference Server is designed to be efficient where FastAPI isn't meant to and 
-to provide a fine-grained control of all of your computing power in a most effective way.
+You might wonder why we use a specialized inference server instead of simply deploying the model in a FastAPI service. 
+There are several reasons for this.
+
+First, FastAPI is not designed specifically for deploying machine learning models;
+its strength lies in handling high-load backend services with varying levels of business logic complexity.
+
+Second, FastAPI lacks resource management features like GPU utilization, which is crucial for the performance of ML models.
+Additionally, advanced optimizations such as dynamic batching, caching, and I/O binding would need to be implemented manually in FastAPI.
+In contrast, Triton Inference Server is built specifically for these tasks, providing efficient use of computational resources and fine-grained control over your infrastructure.
   
 ## Overview  
   
@@ -36,29 +38,33 @@ So, let's get started!
   
 ## Benchmarking Methodology  
 
-There are plenty tools for conducting load testing. 
-The most known are [apache http benchmarking tool (ab)](https://httpd.apache.org/docs/2.4/programs/ab.html),
-[JMeter](https://jmeter.apache.org/) and [Locust](https://locust.io/).
+There are many tools available for load testing, with some of the most well-known being the
+[Apache HTTP benchmarking tool (ab)](https://httpd.apache.org/docs/2.4/programs/ab.html),
+[JMeter](https://jmeter.apache.org/), and [Locust](https://locust.io/).
 
-Despite AB simplicity it doesn't support GRPC requests, so it does not suit our case.
-JMeter is a standard tool for load testing. It even supports gRPC requests via plugin.
-But JMeter requires to write tests on Java which is too complicated for a non-Java project.
+While AB is simple to use, it doesn't support gRPC requests,
+making it unsuitable for our needs.
+JMeter is a strong tool for load testing and does support gRPC requests through a plugin.
+However, it requires writing tests in Java, which is too complex for our project.
 
-So, we'll use locust as it supports gRPC as well as provide a simple python interface for writing test cases.
+Therefore, we'll use Locust, which supports gRPC and offers a straightforward Python interface for writing test cases.
   
 ## Baseline: Python Backend  
 
-Triton Inference Server provides multiple backends for variety of models from boosting models to LLMs.
+Triton Inference Server supports multiple backends, enabling the deployment of a wide range of models,
+from boosting models to large language models (LLMs).
 
-The simplest way to deploy a model with Triton Inference Server is to package it with Python backend
-and perform computations via [Hugging Face pipeline](https://huggingface.co/docs/transformers/v4.44.0/en/main_classes/pipelines).
+The easiest way to deploy a model with Triton is to use the Python backend,
+allowing computations to be performed via the [Hugging Face pipeline](https://huggingface.co/docs/transformers/v4.44.0/en/main_classes/pipelines).
 
-Python backend requires the model implementation to be placed in the <model_name>/1/model.py file.
-The standard directory structure for deploying a model on Triton can be [found here](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/model_repository.html#repository-layout).
+For the Python backend, the model's implementation needs to be placed in 
+the `<model_name>/1/model.py` file.
+The standard directory structure for deploying a model on Triton 
+can be found in the [official documentation](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/model_repository.html#repository-layout).
 
-First, you must define a class named `TritonPythonModel` and implement the `execute` method.
+To get started, define a class named `TritonPythonModel` and implement the `execute` method.
 Optionally, you can also implement the `initialize` and `finalize` methods 
-if your model requires loading resources before execution or performing any clean-up before exiting.
+if the model requires resource loading before execution or clean-up tasks before shutting down.
 
 
 ```python
@@ -138,22 +144,21 @@ output [
   
 ## What is ONNX  
   
-ONNX is an open, hardware-agnostic, interchangeable open-source format for storing and optimising machine learning models.
-It supports various neural network architectures as well as some classical models.
-One of the advantages of ONNX is the availability of a dedicated runtime for ONNX models,
-which can be used for inference in different scenarios.
+ONNX is an open-source, hardware-agnostic format for storing and optimizing machine learning models.
+It supports a wide range of neural network architectures as well as some classical models.
+One of its key advantages is the availability of a dedicated ONNX runtime,
+which can be used for efficient inference across various environments.
 
-There are several methods for converting a transformer model to ONNX format.
-A high-level approach is to use the `optimum-cli` tool,
-which is an extension of Transformers library.
-This tool is designed to convert transformer models to various formats,
-including ONNX, and to optimise them for fast inference.
-The complete list of architectures Optimum supports can be [found here](https://huggingface.co/docs/optimum/exporters/onnx/overview).
+There are multiple ways to convert a transformer model to the ONNX format.
+A high-level approach involves using the `optimum-cli` tool, an extension of the Transformers library. 
+This tool is specifically designed to convert transformer models into various formats,
+including ONNX, and optimize them for faster inference.
+You can find the complete list of supported architectures [here](https://huggingface.co/docs/optimum/exporters/onnx/overview).
 
-Alternatively, there is a low-level method for converting a transformer model to ONNX.
-You can [explore this in more detail here](https://pytorch.org/docs/stable/onnx.html).
-For an additional quality check during conversion with Optimum,
-you will need to install `accelerate` package.
+For a more low-level conversion method,
+you can refer to the [official PyTorch documentation](https://pytorch.org/docs/stable/onnx.html).
+Additionally, if you want to perform a quality check during conversion with Optimum,
+you will need to install the `accelerate` package.
  
 ```bash  
 optimum-cli export onnx --model intfloat/multilingual-e5-large \
@@ -169,26 +174,31 @@ We’ll use absolute and relative error to assess numerical stability following 
 ## Connecting parts of the pipeline  
   
 
-Triton cannot automatically create instances of preprocessing and postprocessing, so you will need to implement them yourself. Fortunately, this is quite straightforward.
-I use the same method as for the baseline deployment.
+Triton doesn’t automatically handle preprocessing and postprocessing steps,
+so you’ll need to implement these yourself.
+Thankfully, this is straightforward, and I use the same approach as with the baseline deployment.
 
-Now that all parts of our pipeline are deployed, do we need to call them manually on the client individually?
-Not at all! Triton provides solutions for this.
-There are two options: Model Ensemble and BLS (Business Logic Scripting).
-Ensemble is designed for pipelines that can be represented as directed acyclic graphs,
-meaning those without loops and conditional flows. This is sufficient for our pipeline.
+Now that our entire pipeline is deployed, do we need to call each part manually from the client?
+Not at all – Triton provides solutions for this.
+There are two options: Model Ensemble and Business Logic Scripting (BLS).
+Model Ensemble is ideal for pipelines that can be represented as directed acyclic graphs (DAGs),
+meaning they have no loops or conditional flows, which works perfectly for our pipeline.
   
   
 ## TensorRT Acceleration  
   
-It is well known that models with weights in FP32 can be accelerated by converting them to FP16.
-ONNX Runtime includes TensorRT Execution Provider, which can enhance the performance of an ONNX model at runtime,
-including conversion to FP16. While converting to FP16 can provide a noticeable boost in inference performance,
-it is crucial to verify that the converted model produces results close to those of the original model.
-For instance, the `intfloat/multilingual-e5-large` model, based on XLMRoberta architecture,
-contains LayerNorm layers known to present issues when converted to FP16.
-Therefore, it is preferable to use mixed precision mode with such models,
-converting all layers to FP16 except for LayerNorm. 
+It’s widely known that models using FP32 weights can be accelerated by converting them to FP16.
+ONNX Runtime offers a TensorRT Execution Provider,
+which improves the performance of ONNX models during runtime,
+including converting them to FP16.
+While this conversion can significantly boost inference speed,
+it's important to ensure that the converted model produces results similar to the original.
+
+For example, the `intfloat/multilingual-e5-large` model, based on the XLMRoberta architecture,
+includes LayerNorm layers,
+which are known to cause issues when converted to FP16.
+As a result, it’s often better to use mixed precision,
+converting most layers to FP16 while keeping LayerNorm layers in FP32.
   
 A basic configuration of TensorRT acceleration in a model’s proto-config looks like this:  
 ```prototext
@@ -212,18 +222,19 @@ According to the [Triton ONNX Runtime Backend docs](https://github.com/triton-in
 * [trt_layer_norm_fp32_fallback](https://onnxruntime.ai/docs/execution-providers/TensorRT-ExecutionProvider.html#trt_layer_norm_fp32_fallback): force Pow + Reduce ops in layer norm to FP32. Allowed values are “true” and “false”.  
   
   
-So, how exactly does TensorRT Execution Provider optimise a model during runtime? 
+How does the TensorRT Execution Provider optimize a model during runtime?
 
-Firstly, it attempts to fuse layers wherever possible so that the provider can replace them with high-performance ones
-that are optimised for the specific hardware in use at runtime.
+First, it attempts to fuse layers wherever possible,
+allowing the provider to replace them with high-performance implementations
+optimized for the specific hardware used during runtime.
 
-However, creating an engine from scratch is generally an expensive operation.
-After fusing layers, the provider conducts timing tests to select the fastest implementations for the actual GPU.
-These tests require a few inputs, meaning your model may perform quite slowly at the beginning of deployment.
-Fortunately, this warm-up phase can be carried out before the model is ready to handle requests.
-The Triton model definition includes a dedicated section for this purpose.
+However, building an engine from scratch is a resource-intensive process.
+After layer fusion, the provider runs timing tests to determine the fastest implementations for the target GPU.
+These tests require several inputs, so the model may initially perform slowly right after deployment.
+Fortunately, this warm-up phase can be completed before the model starts handling requests,
+and Triton's model definition includes a dedicated section for configuring this.
 
-You should generally experiment with the `max_workspace_size_bytes` parameter to achieve the best performance.
+To achieve optimal performance, it's recommended to experiment with the `max_workspace_size_bytes` parameter.
   
 ```prototext
 model_warmup [  
@@ -251,14 +262,17 @@ model_warmup [
 ```  
 
 
-As our model requires two inputs, we define both in this section, specifying their data types, dimensions, and corresponding data files.  
-The script for preparing the data files can be found here (INSERT LINK).  
-It is important to note that TensorRT Provider can [rebuild the model on the go](https://huggingface.co/docs/optimum/en/onnxruntime/usage_guides/gpu#tensorrt-engine-build-and-warmup)  
-if it receives a request with at least one dimension differing from previously encountered.  
-Therefore, we should plan for a warm-up phase.  
-We will infer our model with a maximum batch size of 256, and we are aware that the maximum number of input tokens for the multilingual-e5-large model is 512.  
-We will create two sets of warm-up files. The first will have a batch size of 1 and contain 4 tokens, as most inputs are expected to include more tokens.  
-The second will have a batch size 256 and contain 512 tokens per sample.
+Since our model requires two inputs, we need to define both, specifying their data types, dimensions, and corresponding data files.
+You can find the script for preparing these data files [here] (INSERT LINK).
+
+It’s important to note that the TensorRT provider can [rebuild the model on the fly](https://huggingface.co/docs/optimum/en/onnxruntime/usage_guides/gpu#tensorrt-engine-build-and-warmup)
+if it receives a request with dimensions that differ from those previously encountered.
+To account for this, we need to include a warm-up phase.
+
+Our model will infer with a maximum batch size of 256,
+and we know the maximum number of input tokens for the `multilingual-e5-large` model is 512.
+Therefore, we will prepare two sets of warm-up files: one with a batch size of 1 and 4 tokens,
+assuming most inputs will include more tokens, and another with a batch size of 256 and 512 tokens per sample.
  
 So the final configuration for a warmup will be like this:  
   
@@ -322,45 +336,61 @@ Protobuf is a very GRPC performs better than REST in general.
   
 ## What's next?  
   
-This post, naturally, cannot cover every aspect of deploying a model with Triton Inference Server.
-So, I would like to suggest some steps you can take if the results do not meet your expectations or if you require improved performance.
+This post, of course, cannot cover every aspect of deploying a model with Triton Inference Server.
+However, I’d like to suggest some steps you can take if the results don’t meet your expectations
+or if you need improved performance.
 
-Firstly, to enhance performance, you can utilise the `instance_groups` section of the model configuration to launch multiple instances of a model.
-Further details can be found [here](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/model_configuration.html#instance-groups).
-This approach may improve performance for some models, though it might have the opposite effect depending on the model.
-It is therefore advisable to experiment with your model to determine the optimal configuration.
+### Enhancing Performance
 
-It is also worth noting that there may be compatibility issues between certain versions of CUDA driver and ONNX Runtime,
-which can cause failures when starting the model with `instance_groups[].count` set to more than one, especially if TensorRT acceleration is enabled.
+First, to boost performance, consider using the `instance_groups` section of the model configuration
+to launch multiple instances of your model.
+More details on this can be found [here](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/model_configuration.html#instance-groups).
+While this approach may enhance performance for some models, it could have the opposite effect for others,
+so it's advisable to experiment with your model to find the optimal configuration.
 
-Secondly, you can quantise your model to int8, int4 or even a two-bit format.
-For quantisation to int8, [Olive](https://github.com/microsoft/Olive) is a recommended tool for optimising ONNX models for specific hardware.
+Be aware that compatibility issues may arise between certain versions of the CUDA driver and ONNX Runtime.
+These issues can lead to failures when starting the model with `instance_groups[].count` set to more than one,
+particularly when TensorRT acceleration is enabled.
 
-Alternatively, you can convert a model to TensorRT beforehand and use Triton for inference via [Triton TensorRT backend](https://github.com/triton-inference-server/tensorrt_backend).
+### Model Quantization
 
-To tune Triton parameters for a model to infer on Triton Inference Server, you can employ the [model analyser](https://github.com/triton-inference-server/model_analyzer) and [performance analyser](https://docs.nvidia.com/deeplearning/triton-inference-server/archives/triton-inference-server-2280/user-guide/docs/user_guide/perf_analyzer.html).
-These tools, provided by Triton, help in optimising any model.
+Another effective strategy is to quantize your model to int8, int4, or even a two-bit format.
+For int8 quantization, [Olive](https://github.com/microsoft/Olive) is a recommended tool for optimizing ONNX models
+for specific hardware.
 
-[Polygraphy](https://github.com/NVIDIA/TensorRT/tree/main/tools/Polygraphy) is another useful tool for analysing a model,
-particularly if it behaves differently on TensorRT.
-It enables comparison of inputs and outputs of an ONNX model with the corresponding TensorRT model layer by layer.
+Alternatively, you can convert your model to TensorRT ahead-of-time and utilize Triton for inference
+through the [Triton TensorRT backend](https://github.com/triton-inference-server/tensorrt_backend).
 
-Finally, if you have optimised your model as much as possible and still require better performance,
-consider speeding up preprocessing by developing a custom backend e.g. written in Rust.
-This can provide a performance boost, as the underlying implementation of transformer tokenisers is written in Rust.
-During execution in Python, some overhead is associated with transferring data between Python interpreter and Rust.
-Postprocessing can also be enhanced through batching and offloading calculations to a GPU, or by rewriting it in Rust.
-High-level requirements for implementing a custom Triton backend can be found [here](https://docs.nvidia.com/deeplearning/triton-inference-server/archives/triton_inference_server_220/user-guide/docs/backend.html#backend-shared-library).
+### Tuning Triton Parameters
 
-At Wildberries, we use Helm charts and Kubernetes to deploy models.
-This setup allows us to perform rolling updates and automatic horizontal autoscaling.
-If you need additional features, such as built-in support for canary deployments and A/B testing,
-you might consider [Seldon Core](https://github.com/SeldonIO/seldon-core).
+To fine-tune Triton parameters for inference, you can use the [model analyzer](https://github.com/triton-inference-server/model_analyzer)
+and the [performance analyzer](https://docs.nvidia.com/deeplearning/triton-inference-server/archives/triton-inference-server-2280/user-guide/docs/user_guide/perf_analyzer.html).
+These tools provided by Triton assist in optimizing any model.
+
+[Polygraphy](https://github.com/NVIDIA/TensorRT/tree/main/tools/Polygraphy) is another valuable tool
+for analyzing model behavior, especially if your model performs differently on TensorRT.
+It enables you to compare the inputs and outputs of an ONNX model against the corresponding TensorRT model, layer by layer.
+
+### Custom Backend Development
+
+If you've optimized your model as much as possible and still need better performance, consider speeding up preprocessing by developing a custom backend, perhaps in Rust.
+This approach can provide a performance boost since the underlying implementation of transformer tokenizers is in Rust.
+When executing in Python, there is some overhead associated with transferring data between the Python interpreter and Rust. 
+
+You can also enhance post-processing through batching and offloading calculations to a GPU or by rewriting the code in Rust.
+You can find high-level requirements for implementing a custom Triton backend [here](https://docs.nvidia.com/deeplearning/triton-inference-server/archives/triton_inference_server_220/user-guide/docs/backend.html#backend-shared-library).
+
+### Deployment Strategies
+
+At Wildberries, we deploy models using Helm charts and Kubernetes,
+which allows us to perform rolling updates and automatic horizontal autoscaling.
+If you’re looking for additional features such as built-in support for canary deployments and A/B testing,
+consider [Seldon Core](https://github.com/SeldonIO/seldon-core).
 Seldon Core supports the deployment of nearly any type of machine learning model,
-the Triton is just one of the many runtimes it supports.
+with Triton being just one of the many runtimes it accommodates.
 
-You can also try KServer which has a great feature
-to scale deployments to zero if there are not any incoming traffic.
+You might also explore KServe,
+which offers the advantageous feature of scaling deployments down to zero when there is no incoming traffic.
 
 ## Bonus: production considerations
 
@@ -395,11 +425,25 @@ to scale deployments to zero if there are not any incoming traffic.
 
 [//]: # (Seldon out of the box provides scaling, A/B-tests, Canary deployments and many more. )
 
-In a real production environment, reliability and observability are crucial. This includes effective monitoring and scalability. To monitor machine learning models, OpenTelemetry, an open-source framework for collecting, exporting, and generating metrics, logs, and traces, can be used. Triton [supports](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/trace.html) OpenTelemetry, enabling the generation of traces for inference requests.
+In a real production environment, reliability and observability are crucial.
+This includes effective monitoring and scalability.
+To monitor machine learning models, OpenTelemetry, an open-source framework for collecting,
+exporting, and generating metrics, logs, and traces, can be used.
+Triton [supports](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/trace.html)
+OpenTelemetry, enabling the generation of traces for inference requests.
 
-Most companies rely on Prometheus as a metrics database, along with Grafana for visual dashboards and alerts. Triton also [supports](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/metrics.html) Prometheus metrics, including GPU performance data and request statistics, making it easier to monitor and optimize models in production.
+Most companies rely on Prometheus as a metrics database,
+along with Grafana for visual dashboards and alerts.
+Triton also [supports](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/metrics.html)
+Prometheus metrics, including GPU performance data and request statistics, making it easier to monitor and optimize models in production.
 
-Scalability is another key concern in production environments. Tools like [Seldon-Core](https://github.com/SeldonIO/seldon-core) are designed to address this challenge. Seldon-Core facilitates the deployment of machine learning models on Kubernetes, introducing the concept of a "server" that acts as the backend for a model. It supports popular frameworks like scikit-learn, XGBoost, and Triton. With Seldon, you can run Triton instances while benefiting from built-in features such as automatic scaling, A/B testing, Canary deployments, and more.
+Scalability is another key concern in production environments.
+Tools like [Seldon-Core](https://github.com/SeldonIO/seldon-core) are designed to address this challenge.
+Seldon-Core facilitates the deployment of machine learning models on Kubernetes,
+introducing the concept of a "server" that acts as the backend for a model.
+It supports popular frameworks like scikit-learn, XGBoost, and Triton.
+With Seldon, you can run Triton instances while benefiting from built-in features such as automatic scaling,
+A/B testing, Canary deployments, and more.
   
 ## Resources  
   
