@@ -21,7 +21,7 @@ In my spark time I enjoy swimming.
 
 # Resume
 
+
 # Contact
 
-Github: [https://github.com/not-matthias](https://github.com/not-matthias) <br />
-Linkedin: []
+Email: rproskuryakov.job@gmail.com
