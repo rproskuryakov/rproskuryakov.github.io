@@ -312,10 +312,8 @@ The embedding quality stays the same: (paste distribution of differences)
   
 GRPC vs REST clients  
   
-GRPC performs better than REST in general.  
-However, one of the latest Triton Inference Server update notices   
-says there are some unclear reasons why the REST client works much slower than GRPC.  
-So, we experimented and also compared the performance of different protocols.  
+Protobuf is a very GRPC performs better than REST in general.  
+ 
   
 ## What's next?  
   
@@ -367,11 +365,11 @@ To monitor a model one can use an opentelemetry
 which is an open-source instrument for collect, export and generate metrics, logs an traces of an application.
 Triton [supports](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/trace.html) opentelemetry generation for traces of inference requests.
 
-Also as a standard observability method you can enable prometheus metrics in Triton.
 Majority of companies use Prometheus as a database for metrics and Grafana for dashboards and alerts.
-Triton [can be set](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/metrics.html) to provide prometheus metrics to collect GPU metrics as well as requests statistics.
+Triton also [supports](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/metrics.html) providing prometheus metrics. They contain GPU metrics and requests statistics.
 
-Also, in a production environment you'd need to think about scalability. 
+
+Another issue in a production environment is scalability.
 [Seldon-Core](https://github.com/SeldonIO/seldon-core) is one of the instruments to help with that.
 It is a tool dedicated to deployment of machine learning models on Kubernetes.
 Seldon introduces the concept of a server in fact being a backend for a model.
