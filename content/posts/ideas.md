@@ -8,6 +8,8 @@ draft = true
 comment = false
 +++
 
+# Spark vector search (as a project)
+
 # Homomorphic Encryption
 
 

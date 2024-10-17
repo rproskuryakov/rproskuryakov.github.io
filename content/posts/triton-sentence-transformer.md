@@ -1,7 +1,8 @@
 +++
 title = "Deploying a Sentence Transformer with Triton Inference Server"
 date = "2024-11-01"
-draft = false
+draft = true
+description = ""
 [taxonomies]
 tags=["triton", "inference", "transformers", "onnxruntime", "tensorrt"]
 
@@ -313,6 +314,10 @@ The embedding quality stays the same: (paste distribution of differences)
 GRPC vs REST clients  
   
 Protobuf is a very GRPC performs better than REST in general.  
+
+(INSERT-PLOT-GRPC-vs-HTTP)
+
+(INSERT-PLOT-gRPC-python-onnx-tensorrt)
  
   
 ## What's next?  
@@ -359,24 +364,42 @@ to scale deployments to zero if there are not any incoming traffic.
 
 ## Bonus: production considerations
 
-In the real production environment reliability and observability are required. 
-That includes monitoring and scalability. 
-To monitor a model one can use an opentelemetry 
-which is an open-source instrument for collect, export and generate metrics, logs an traces of an application.
-Triton [supports](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/trace.html) opentelemetry generation for traces of inference requests.
+[//]: # (In the real production environment reliability and observability are required. )
 
-Majority of companies use Prometheus as a database for metrics and Grafana for dashboards and alerts.
-Triton also [supports](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/metrics.html) providing prometheus metrics. They contain GPU metrics and requests statistics.
+[//]: # (That includes monitoring and scalability. )
 
+[//]: # (To monitor a model one can use an opentelemetry )
 
-Another issue in a production environment is scalability.
-[Seldon-Core](https://github.com/SeldonIO/seldon-core) is one of the instruments to help with that.
-It is a tool dedicated to deployment of machine learning models on Kubernetes.
-Seldon introduces the concept of a server in fact being a backend for a model.
-Servers include scikit-learn, xgboost etc. Also, they include Triton.
-That means you can run any of the Triton instances via Seldon. 
-Seldon out of the box provides scaling, A/B-tests, Canary deployments and many more. 
+[//]: # (which is an open-source instrument for collect, export and generate metrics, logs an traces of an application.)
 
+[//]: # (Triton [supports]&#40;https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/trace.html&#41; opentelemetry generation for traces of inference requests.)
+
+[//]: # ()
+[//]: # (Majority of companies use Prometheus as a database for metrics and Grafana for dashboards and alerts.)
+
+[//]: # (Triton also [supports]&#40;https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/metrics.html&#41; providing prometheus metrics. They contain GPU metrics and requests statistics.)
+
+[//]: # ()
+[//]: # ()
+[//]: # (Another issue in a production environment is scalability.)
+
+[//]: # ([Seldon-Core]&#40;https://github.com/SeldonIO/seldon-core&#41; is one of the instruments to help with that.)
+
+[//]: # (It is a tool dedicated to deployment of machine learning models on Kubernetes.)
+
+[//]: # (Seldon introduces the concept of a server in fact being a backend for a model.)
+
+[//]: # (Servers include scikit-learn, xgboost etc. Also, they include Triton.)
+
+[//]: # (That means you can run any of the Triton instances via Seldon. )
+
+[//]: # (Seldon out of the box provides scaling, A/B-tests, Canary deployments and many more. )
+
+In a real production environment, reliability and observability are crucial. This includes effective monitoring and scalability. To monitor machine learning models, OpenTelemetry, an open-source framework for collecting, exporting, and generating metrics, logs, and traces, can be used. Triton [supports](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/trace.html) OpenTelemetry, enabling the generation of traces for inference requests.
+
+Most companies rely on Prometheus as a metrics database, along with Grafana for visual dashboards and alerts. Triton also [supports](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/metrics.html) Prometheus metrics, including GPU performance data and request statistics, making it easier to monitor and optimize models in production.
+
+Scalability is another key concern in production environments. Tools like [Seldon-Core](https://github.com/SeldonIO/seldon-core) are designed to address this challenge. Seldon-Core facilitates the deployment of machine learning models on Kubernetes, introducing the concept of a "server" that acts as the backend for a model. It supports popular frameworks like scikit-learn, XGBoost, and Triton. With Seldon, you can run Triton instances while benefiting from built-in features such as automatic scaling, A/B testing, Canary deployments, and more.
   
 ## Resources  
   
