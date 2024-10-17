@@ -43,10 +43,9 @@ In my spark time I enjoy swimming.
 
 **Senior MLOps Engineer, December 2020 – July 2022, September 2023 – April 2024**
 
-* Conducted research on transferring vector search from a GPU cluster to Spark distributed computations on ~100 billions of embeddings. 
-* Research on Feature Stores. Work on LLM applications.
+* Conducted research on transferring vector search from a GPU cluster to Spark distributed computations on ~100 billions of embeddings.
 * Developed a Python package for flexible configuration and conducting experiments on text classification with neural networks.
-* Significantly improved results of the Dialog 2015 competition on aspect-based sentiment analysis as a part of the research task.
+* Significantly improved results of Dialog 2015 competition on aspect-based sentiment analysis as a part of the research task.
 * Developed an operator for K8S on Go in the AutoML project.
 * Optimized BERT performance with the use of the ONNX and heuristics. Increased the inference speed by 4
 times.
@@ -57,12 +56,12 @@ times.
 
 **Data Scientist, R&D Department, July 2019 – September 2020**
 
-* Improved the intent classification model score by 8\% with BERT fine-tuning.
-* Applied methods for the semi-supervised intent mining on unstructured text data.
+* Improved intent classification model score by 8\% with BERT fine-tuning.
+* Applied methods for semi-supervised intent mining on unstructured text data.
 * Automated deployment with Gitlab CI/CD. Time of deployment decreased from 1 hour (manual deployment)
 to 3 minutes.
-* Deployed MinIO as model storage and MLFlow as an experiment tracker. Contributed to their usage in the department. Automated experiments pipeline for reproducibility.
-* Deployed and maintained platforms for the data assessment (label studio, doccano) and formulated tasks for assessors.
+* Deployed MinIO as model storage and MLFlow as experiment tracker. Contributed to their usage in the department. Automated experiments pipeline for reproducibility.
+* Deployed and maintained platforms for data assessment (label studio, doccano) and formulated tasks for assessors.
 
 ## Education
 
