@@ -31,6 +31,7 @@ menu = [
 ]
 fancy_code = true
 dynamic_note = true
+favicon = true
 #comment = true
 mathjax = true
 mathjax_dollar_inline_enable = true
