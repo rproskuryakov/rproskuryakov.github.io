@@ -21,7 +21,7 @@ highlight_theme = "nord"
 [extra]
 theme = "light"
 socials = [
-    { name = "linkedin", url = "www.linkedin.com/in/r-proskuriakov", icon = "linkedin" },
+    { name = "linkedin", url = "https://www.linkedin.com/in/r-proskuriakov", icon = "linkedin" },
     { name = "github", url = "https://github.com/rproskuryakov", icon = "github" },
 ]
 menu = [
