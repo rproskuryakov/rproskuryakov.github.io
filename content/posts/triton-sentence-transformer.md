@@ -335,16 +335,15 @@ The embedding quality stays the same: (@TODO: paste distribution of differences)
   
 ## Performance comparison  
 
-@TODO
+So there are three configurations of the model. I tested the whole pipeline as well as model itself.
 
-GRPC vs REST clients  
-  
-Protobuf is a very GRPC performs better than REST in general.  
-
-(INSERT-PLOT-GRPC-vs-HTTP)
+### Pipeline performance
 
 (INSERT-PLOT-gRPC-python-onnx-tensorrt)
- 
+
+### Model performance
+
+(INSERT-PLOT-gRPC-python-onnx-tensorrt)
   
 ## What's next?  
   
