@@ -1,7 +1,7 @@
 +++
 title = "Deploying a Sentence Transformer with Triton Inference Server"
 date = "2024-11-01"
-draft = false
+draft = true
 description = "This post will guide you through optimizing a retrieval model using Triton Inference Server, covering model deployment, ONNX conversion, and TensorRT acceleration for improved performance and efficiency."
 [taxonomies]
 tags=["triton", "inference", "transformers", "onnxruntime", "tensorrt"]
