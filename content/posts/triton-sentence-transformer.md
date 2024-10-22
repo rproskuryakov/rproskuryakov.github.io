@@ -49,7 +49,7 @@ However, it requires writing tests in Java, which is too complex for our project
 
 Therefore, we'll use Locust, which can use gRPC and offers a straightforward Python interface for writing test cases.
 Locust has no support for gRPC requests out of the box, but its docs provide a [clear example](https://docs.locust.io/en/stable/testing-other-systems.html#grpc) of how to use grpc with locust.
-We'll combine that knowledge with an [example of a grpc request](https://github.com/triton-inference-server/client/blob/519124f9e1ea938efffd23b435681b5e57df9ec0/src/python/examples/grpc_client.py#L94C5-L113C47)
+We'll combine that example with an [example of a grpc request](https://github.com/triton-inference-server/client/blob/519124f9e1ea938efffd23b435681b5e57df9ec0/src/python/examples/grpc_client.py#L94C5-L113C47)
 from `tritonclient` package.
 
 ## Let's speed up the model
