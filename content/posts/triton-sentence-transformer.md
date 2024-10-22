@@ -329,14 +329,17 @@ model_warmup [
     } 
   }
 ]  
-```  
-  
-The embedding quality stays the same: (@TODO: paste distribution of differences)  
+```
   
 ## Performance comparison  
 
 So there are three configurations of the model. I tested the whole pipeline as well as model itself.
 
+The load testing can be run with the following command:
+
+```bash
+locust -f locustfile.py --tags ensemble_request --csv reports/v1/load_stat --headless -u 100 -r 5
+```
 ### Pipeline performance
 
 (INSERT-PLOT-gRPC-python-onnx-tensorrt)
