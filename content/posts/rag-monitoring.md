@@ -1,9 +1,9 @@
 +++
-title = "LLMOps: Security, Privacy, Reliability"
+title = "Monitoring of RAG Applications"
 date = "2025-02-27"
 draft = true
 [taxonomies]
-tags=["llm", "mlops"]
+tags=["llm", "mlops", "reliability"]
 [extra]
 comment = true
 +++
@@ -49,20 +49,3 @@ https://github.com/langfuse/langfuse (+observability & monitoing)
 Security & Reliability
 
 https://www.watchful.io/blog/decoding-llm-uncertainties-for-better-predictability
-
-Guardrails / LLMGuard / Vigil
-
-https://github.com/guidance-ai/guidance
-
-https://lmql.ai/
-
-https://www.watchful.io/blog/a-surprisingly-effective-way-to-estimate-token-importance-in-llm-prompts
-
-
-
-Differential privacy
-
-https://www.borealisai.com/research-blogs/tutorial-12-differential-privacy-i-introduction/
-
-https://www.borealisai.com/research-blogs/tutorial-13-differential-privacy-ii-machine-learning-and-data-generation/
-
