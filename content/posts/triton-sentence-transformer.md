@@ -1,8 +1,8 @@
 +++
 title = "Deploying a Sentence Transformer with Triton Inference Server"
 date = "2024-11-01"
-draft = true
-description = ""
+draft = false
+description = "This post will guide you through optimizing a retrieval model using Triton Inference Server, covering model deployment, ONNX conversion, and TensorRT acceleration for improved performance and efficiency."
 [taxonomies]
 tags=["triton", "inference", "transformers", "onnxruntime", "tensorrt"]
 
@@ -362,7 +362,7 @@ Another effective strategy is to quantize your model to int8, int4, or even a tw
 For int8 quantization, [Olive](https://github.com/microsoft/Olive) is a recommended tool for optimizing ONNX models
 for specific hardware.
 
-Alternatively, you can convert your model to TensorRT ahead-of-time and utilize Triton for inference
+Alternatively, you can use TensorRT just-in-time conversion and utilize Triton for inference
 through the [Triton TensorRT backend](https://github.com/triton-inference-server/tensorrt_backend).
 
 ### Tuning Triton Parameters
