@@ -32,7 +32,7 @@ In contrast, Triton Inference Server is built specifically for these tasks, prov
   
 In this tutorial, I will walk you through deploying the `intfloat/multilingual-e5-large` model using the Triton Inference Server.
 We'll also explore how to convert the model to the ONNX format and optimise it with the TensorRT Execution Provider for ONNX Runtime.
-The code is executed on the following server configuration: <SERVER_CONFIG>.
+The code is executed on the following server configuration: Intel® Xeon® Gold 6230 8 vCPU, Nvidia Tesla V100 32 vRAM HBM, 48Gb RAM.
 All the code is available in [this repository](https://github.com/rproskuryakov/triton-sentence-transformer-tutorial).
 So, let's get started!
   
@@ -265,7 +265,7 @@ model_warmup [
 
 
 Since our model requires two inputs, we need to define both, specifying their data types, dimensions, and corresponding data files.
-You can find the script for preparing these data files [here] (INSERT LINK).
+You can find the script for preparing these data files [here] (https://github.com/rproskuryakov/triton-sentence-transformer-tutorial/blob/main/scripts/serialize_data_for_warmup.py).
 
 It’s important to note that the TensorRT provider can [rebuild the model on the fly](https://huggingface.co/docs/optimum/en/onnxruntime/usage_guides/gpu#tensorrt-engine-build-and-warmup)
 if it receives a request with dimensions that differ from those previously encountered.
@@ -323,10 +323,12 @@ model_warmup [
 ]  
 ```  
   
-The embedding quality stays the same: (paste distribution of differences)  
+The embedding quality stays the same: (@TODO: paste distribution of differences)  
   
 ## Performance comparison  
   
+@TODO
+
 GRPC vs REST clients  
   
 Protobuf is a very GRPC performs better than REST in general.  
@@ -373,7 +375,7 @@ These tools provided by Triton assist in optimizing any model.
 for analyzing model behavior, especially if your model performs differently on TensorRT.
 It enables you to compare the inputs and outputs of an ONNX model against the corresponding TensorRT model, layer by layer.
 
-### Custom Backend Development
+### Custom Triton Backend
 
 If you've optimized your model as much as possible and still need better performance, consider speeding up preprocessing by developing a custom backend, perhaps in Rust.
 This approach can provide a performance boost since the underlying implementation of transformer tokenizers is in Rust.
@@ -382,50 +384,7 @@ When executing in Python, there is some overhead associated with transferring da
 You can also enhance post-processing through batching and offloading calculations to a GPU or by rewriting the code in Rust.
 You can find high-level requirements for implementing a custom Triton backend [here](https://docs.nvidia.com/deeplearning/triton-inference-server/archives/triton_inference_server_220/user-guide/docs/backend.html#backend-shared-library).
 
-### Deployment Strategies
-
-At Wildberries, we deploy models using Helm charts and Kubernetes,
-which allows us to perform rolling updates and automatic horizontal autoscaling.
-If you’re looking for additional features such as built-in support for canary deployments and A/B testing,
-consider [Seldon Core](https://github.com/SeldonIO/seldon-core).
-Seldon Core supports the deployment of nearly any type of machine learning model,
-with Triton being just one of the many runtimes it accommodates.
-
-You might also explore KServe,
-which offers the advantageous feature of scaling deployments down to zero when there is no incoming traffic.
-
 ## Bonus: production considerations
-
-[//]: # (In the real production environment reliability and observability are required. )
-
-[//]: # (That includes monitoring and scalability. )
-
-[//]: # (To monitor a model one can use an opentelemetry )
-
-[//]: # (which is an open-source instrument for collect, export and generate metrics, logs an traces of an application.)
-
-[//]: # (Triton [supports]&#40;https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/trace.html&#41; opentelemetry generation for traces of inference requests.)
-
-[//]: # ()
-[//]: # (Majority of companies use Prometheus as a database for metrics and Grafana for dashboards and alerts.)
-
-[//]: # (Triton also [supports]&#40;https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/metrics.html&#41; providing prometheus metrics. They contain GPU metrics and requests statistics.)
-
-[//]: # ()
-[//]: # ()
-[//]: # (Another issue in a production environment is scalability.)
-
-[//]: # ([Seldon-Core]&#40;https://github.com/SeldonIO/seldon-core&#41; is one of the instruments to help with that.)
-
-[//]: # (It is a tool dedicated to deployment of machine learning models on Kubernetes.)
-
-[//]: # (Seldon introduces the concept of a server in fact being a backend for a model.)
-
-[//]: # (Servers include scikit-learn, xgboost etc. Also, they include Triton.)
-
-[//]: # (That means you can run any of the Triton instances via Seldon. )
-
-[//]: # (Seldon out of the box provides scaling, A/B-tests, Canary deployments and many more. )
 
 In a real production environment, reliability and observability are crucial.
 This includes effective monitoring and scalability.
@@ -446,6 +405,9 @@ introducing the concept of a "server" that acts as the backend for a model.
 It supports popular frameworks like scikit-learn, XGBoost, and Triton.
 With Seldon, you can run Triton instances while benefiting from built-in features such as automatic scaling,
 A/B testing, Canary deployments, and more.
+
+You might also explore KServe,
+which offers the advantageous feature of scaling deployments down to zero when there is no incoming traffic.
   
 ## Resources  
   
