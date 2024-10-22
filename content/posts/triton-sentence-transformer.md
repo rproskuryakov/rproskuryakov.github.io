@@ -265,7 +265,7 @@ model_warmup [
 
 
 Since our model requires two inputs, we need to define both, specifying their data types, dimensions, and corresponding data files.
-You can find the script for preparing these data files [here] (https://github.com/rproskuryakov/triton-sentence-transformer-tutorial/blob/main/scripts/serialize_data_for_warmup.py).
+You can find the script for preparing these data files [here](https://github.com/rproskuryakov/triton-sentence-transformer-tutorial/blob/main/scripts/serialize_data_for_warmup.py).
 
 It’s important to note that the TensorRT provider can [rebuild the model on the fly](https://huggingface.co/docs/optimum/en/onnxruntime/usage_guides/gpu#tensorrt-engine-build-and-warmup)
 if it receives a request with dimensions that differ from those previously encountered.
