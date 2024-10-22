@@ -191,7 +191,7 @@ meaning they have no loops or conditional flows, which works perfectly for our p
   
 It’s widely known that models using FP32 weights can be accelerated by converting them to FP16.
 ONNX Runtime offers a TensorRT Execution Provider,
-which improves the performance of ONNX models during runtime,
+which improves the performance of ONNX models with just-in-time optimization for specific hardware,
 including converting them to FP16.
 While this conversion can significantly boost inference speed,
 it's important to ensure that the converted model produces results similar to the original.
