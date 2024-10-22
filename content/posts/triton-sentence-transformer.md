@@ -47,7 +47,10 @@ making it unsuitable for our needs.
 JMeter is a strong tool for load testing and does support gRPC requests through a plugin.
 However, it requires writing tests in Java, which is too complex for our project.
 
-Therefore, we'll use Locust, which supports gRPC and offers a straightforward Python interface for writing test cases.
+Therefore, we'll use Locust, which can use gRPC and offers a straightforward Python interface for writing test cases.
+Locust has no support for gRPC requests out of the box, but its docs provide a [clear example](https://docs.locust.io/en/stable/testing-other-systems.html#grpc) of how to use grpc with locust.
+We'll combine that knowledge with an [example of a grpc request](https://github.com/triton-inference-server/client/blob/519124f9e1ea938efffd23b435681b5e57df9ec0/src/python/examples/grpc_client.py#L94C5-L113C47)
+from `tritonclient` package.
 
 ## Let's speed up the model
 
@@ -156,6 +159,11 @@ A high-level approach involves using the `optimum-cli` tool, an extension of the
 This tool is specifically designed to convert transformer models into various formats,
 including ONNX, and optimize them for faster inference.
 You can find the complete list of supported architectures [here](https://huggingface.co/docs/optimum/exporters/onnx/overview).
+For this post you should install optimum via pip or poetry with the proper dependencies. For example, installation with pip looks like:
+
+```bash
+pip install optimum[exporters,onnxruntime]
+```
 
 For a more low-level conversion method,
 you can refer to the [official PyTorch documentation](https://pytorch.org/docs/stable/onnx.html).
@@ -164,7 +172,7 @@ you will need to install the `accelerate` package.
  
 ```bash  
 optimum-cli export onnx --model intfloat/multilingual-e5-large \
---task feature-extraction  --library-name transformers  --framework pt  converted/
+--task feature-extraction  --library-name sentence_transformer  --framework pt  converted/
  ```  
   
 Optimum-CLI requires only one argument: the model name or the path to the model. Optionally, you can include a task flag from a predefined list. If this parameter is not provided, Optimum will attempt to infer it automatically from the model. We will also specify the library name and the original framework of the model.  
@@ -326,7 +334,7 @@ model_warmup [
 The embedding quality stays the same: (@TODO: paste distribution of differences)  
   
 ## Performance comparison  
-  
+
 @TODO
 
 GRPC vs REST clients  
