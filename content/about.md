@@ -30,7 +30,7 @@ In my spark time I enjoy swimming.
 
 * Documented all business processes of the MLOps team using BPMN diagrams
 
-### Zvuk, Audio streaming service**
+### Zvuk, Audio streaming service
 
 **ML Engineer, RecSys Team, September 2022 – September 2023**
 
