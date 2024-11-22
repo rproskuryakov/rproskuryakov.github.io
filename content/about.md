@@ -29,7 +29,7 @@ Key Skills & Technologies: `Python`, `SQL`, `FastAPI`, `Triton Inference Server`
 
 **MLOps Engineer, April 2024 – present time**
 
-* Documented all business processes of the MLOps team using BPMN diagrams.
+* Documented all business processes of the MLOps team using BPMN diagrams. Implemented process metrics and SLA.
 * Deployed multiple important machine learning models using Triton Inference Server.
 * Refactored image search pipeline that is responsible for 20% of company's revenue.
 
