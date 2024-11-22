@@ -19,7 +19,7 @@ Currently, I work at Wildberries, the largest online retailer in Russia,
 where I apply my expertise to drive innovative solutions 
 and optimize machine learning operations.
 
-In my spark time I enjoy swimming.
+In my spare time I enjoy swimming.
 
 Key Skills & Technologies: `Python`, `SQL`, `FastAPI`, `Triton Inference Server`, `ONNX`, `Airflow`, `CI/CD`, `Docker`, `RecSys`, `K8S`, `Business Process Analysis`.
 
