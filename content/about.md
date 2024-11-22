@@ -7,10 +7,9 @@ toc = false
 Hey, I'm Rodion.
 
 I'm interested in:
-- Model inference
-- MLOps/LLMOps
-- ML systems reliability
-- Computer Architecture
+- Model Inference
+- MLOps/LLMOps & ML Systems Reliability
+- Recommender Systems
 - Math
 
 As an MLOps Engineer with over 5 years of experience,
@@ -22,13 +21,17 @@ and optimize machine learning operations.
 
 In my spark time I enjoy swimming.
 
+Key Skills & Technologies: `Python`, `SQL`, `FastAPI`, `Triton Inference Server`, `ONNX`, `Airflow`, `CI/CD`, `Docker`, `RecSys`, `K8S`, `Business Process Analysis`.
+
 # Work experience
 
 ### Wildberries, Online-retailer
 
 **MLOps Engineer, April 2024 – present time**
 
-* Documented all business processes of the MLOps team using BPMN diagrams
+* Documented all business processes of the MLOps team using BPMN diagrams.
+* Deployed multiple important machine learning models using Triton Inference Server.
+* Refactored image search pipeline that is responsible for 20% of company's revenue.
 
 ### Zvuk, Audio streaming service
 
