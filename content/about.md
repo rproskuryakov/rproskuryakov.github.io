@@ -23,7 +23,7 @@ In my spare time I enjoy swimming.
 
 Key Skills & Technologies: `Python`, `SQL`, `FastAPI`, `Triton Inference Server`, `ONNX`, `Airflow`, `CI/CD`, `Docker`, `RecSys`, `K8S`, `Business Process Analysis`.
 
-# Work experience
+# Work experience (5 years)
 
 ### Wildberries, Online-retailer
 
