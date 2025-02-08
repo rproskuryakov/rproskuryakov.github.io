@@ -35,22 +35,6 @@ We'll also explore how to convert the model to the ONNX format and optimise it w
 The code is executed on the following server configuration: Intel® Xeon® Gold 6230 8 vCPU, Nvidia Tesla V100 32 vRAM HBM, 48Gb RAM.
 All the code is available in [this repository](https://github.com/rproskuryakov/triton-sentence-transformer-tutorial).
 So, let's get started!
-  
-## Benchmarking Methodology  
-
-There are many tools available for load testing, with some of the most well-known being the
-[Apache HTTP benchmarking tool (ab)](https://httpd.apache.org/docs/2.4/programs/ab.html),
-[JMeter](https://jmeter.apache.org/), and [Locust](https://locust.io/).
-
-While AB is simple to use, it doesn't support gRPC requests,
-making it unsuitable for our needs.
-JMeter is a strong tool for load testing and does support gRPC requests through a plugin.
-However, it requires writing tests in Java, which is too complex for our project. You can
- always use Locust which gained a lot of attention recently. It's an excellent tool, especially,
-if write code mostly on Python. Locust supports gRPC but it doesn't work out of the box. 
-
-Therefore, we'll use [ghz](https://github.com/bojand/ghz), which is meant to be a terminal load testing tool for gRPC benchmarking 
-and load testing specifically. 
 
 ## Let's speed up the model
 
@@ -172,7 +156,7 @@ you will need to install the `accelerate` package.
  
 ```bash  
 optimum-cli export onnx --model intfloat/multilingual-e5-large \
---task feature-extraction  --library-name sentence_transformer  --framework pt  converted/
+--task feature-extraction  --library-name sentence_transformers  --framework pt  models/v2/multilingual-e5-large-onnx/1/
  ```  
   
 Optimum-CLI requires only one argument: the model name or the path to the model. Optionally, you can include a task flag from a predefined list. If this parameter is not provided, Optimum will attempt to infer it automatically from the model. We will also specify the library name and the original framework of the model.  
@@ -330,23 +314,18 @@ model_warmup [
   }
 ]  
 ```
-  
-## Performance comparison  
 
-So there are three configurations of the model. I tested the whole pipeline as well as model itself.
+## Benchmarking Methodology  
 
-The load testing can be run with the following command:
+There are many tools available for load testing, with some of the most well-known being the
+[Apache HTTP benchmarking tool (ab)](https://httpd.apache.org/docs/2.4/programs/ab.html),
+[JMeter](https://jmeter.apache.org/), and [Locust](https://locust.io/).
 
-```bash
-locust -f locustfile.py --tags ensemble_request --csv reports/v1/load_stat --headless -u 100 -r 5
-```
-### Pipeline performance
-
-(INSERT-PLOT-gRPC-python-onnx-tensorrt)
-
-### Model performance
-
-(INSERT-PLOT-gRPC-python-onnx-tensorrt)
+Yet, Triton has its own benchmarking tool named 
+[perf_analyser](https://docs.nvidia.com/deeplearning/triton-inference-server/archives/triton-inference-server-2280/user-guide/docs/user_guide/perf_analyzer.html).
+It measures latency and throughput sending requests to a server. It's optimized for Triton and gives the closest results you can get 
+to performance while using official clients. Besides other features perf_analyzer allows to collect GPU utilization metrics which
+are crucial to model inference.
   
 ## What's next?  
   
@@ -377,9 +356,8 @@ through the [Triton TensorRT backend](https://github.com/triton-inference-server
 
 ### Tuning Triton Parameters
 
-To fine-tune Triton parameters for inference, you can use the [model analyzer](https://github.com/triton-inference-server/model_analyzer)
-and the [performance analyzer](https://docs.nvidia.com/deeplearning/triton-inference-server/archives/triton-inference-server-2280/user-guide/docs/user_guide/perf_analyzer.html).
-These tools provided by Triton assist in optimizing any model.
+To fine-tune Triton parameters for inference, you can use the [model analyzer](https://github.com/triton-inference-server/model_analyzer).
+This tool allows you to do an optimization process of configuration parameters via different algorithms such as bayesian optimization.
 
 [Polygraphy](https://github.com/NVIDIA/TensorRT/tree/main/tools/Polygraphy) is another valuable tool
 for analyzing model behavior, especially if your model performs differently on TensorRT.

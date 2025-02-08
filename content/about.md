@@ -25,13 +25,14 @@ Key Skills & Technologies: `Python`, `SQL`, `FastAPI`, `Triton Inference Server`
 
 # Work experience (5 years)
 
-### Wildberries, Online-retailer
+### X5, Grocery E-com
+**MLOps Engineer, January 2025 - Present time**
 
-**MLOps Engineer, April 2024 – present time**
+### Wildberries, E-com
 
-* Documented all business processes of the MLOps team using BPMN diagrams. Implemented process metrics and SLA.
-* Deployed multiple important machine learning models using Triton Inference Server.
-* Refactored image search pipeline that is responsible for 20% of company's revenue.
+**MLOps Engineer, April 2024 – December 2025**
+
+* Documented all business processes of the MLOps team using BPMN diagrams.
 
 ### Zvuk, Audio streaming service
 

@@ -1,7 +1,8 @@
 +++
-title = "Designing an Embedding Storage and Vector Search System"
+title = "Designing an Embedding Storage and Vector Search System (1)"
 date = "2024-12-01"
 draft = true
+description = "This post covers different considerations on how to build vector search and storage on top of a data lake."
 [taxonomies]
 tags=["embeddings", "vector-databases", "architecture"]
 [extra]
@@ -11,13 +12,17 @@ comment = true
 
 ## Introduction
 
-- problem statement and needs for a new solutions
+Large Language Models are the latest breakthrough in AI field. Since their discovery they are embedded in search engines, chat-bots and recommender systems. A lot of the systems leverage Retrieval-Augmented Generation (RAG). This shift has transformed the tools ML engineers use in their production environments. Yet, one major challenge complicated by RAG systems often overlooked. Majority of these systems use vector search. 
 
-## Motivation
+Vector search is not a new thing. It it widely adopted in the industry since the word2vec discovery. Not only in NLP but in other branches of machine learning. Recommender Systems and CV based on embeddings as well. The problem is how to choose a proper way of vector storage, computing and search. Also it's hard to tune a specific tool for a particular task. There are more than few ways to build a vector index. Number of hyperparameters scale greatly.
 
-- Motivation (challenges e.g. scalability, performance bottlenecks, complexity of finding the right db)
+There are plenty of proprietary and open-source vector databases nowadays. The list grows every month. While they serve the common purpose the devil's in the details. Some vector databases such as pgvector offer seamless integration with your tech stack. Others like Faiss focus on ease of use and performance.
 
-## Vector Databases 201
+Despite this, building a reliable solution has become more challenging than ever. Integrating it into your infrastructure adds another layer of complexity. Do you need only online vector search, or do you also need scheduled pipelines? What about your data analytics and data scientists who want to run ad-hoc queries? It's important to keep these needs in mind. Of course, there is no silver bullet. Some companies don't even need a vector database, naive search with numpy fits them. Others need a high-load solution for billions of vectors updated every second. 
+
+This post is an attempt to provide a framework for designing such systems, a list of points to consider. I hope they'll help you in tailoring existing tools for your task at hand.
+
+## Taxonomy of Vector Databases
 
  indexing strategies; tradeoffs: scaling, performance, ease of integration)
 
@@ -32,27 +37,17 @@ One could argue that sqlite is not built for a production environment.
 Also, the dbms can be divided into OLTP (Online Transactional Processing) and OLAP (Online Analytical Processing).
 PostgreSQL is an OLTP example whilst GreenPlum as an OLAP one.
 
-### Client-server vs Embedded
-
-### OLTP vs OLAP
-
-### Indexing strategies
 
 One can balanced latency, recall, storage and overall cost by using different indexing algorithms.
 The most known is HNSW but there a a lot more. People even use quantization to lower
 the vectors' memory requirements and to speed up vector search even more.
 
-### Tradeoffs
-
 ## Use Cases
 
 - Vector Search Use Cases (online, batch, ad-hoc analytics: map applications to use cases e.g. online recsys)
-
-### Recommender Systems
-
-### LLM Applications
-
-### BI & Analytics
+- Recommender systems
+- LLM Aplications
+- BI & Analytics
 
 ## Choosing storage for Embeddings
 
@@ -73,7 +68,6 @@ The last, but not the least, cold storage is used for data that is not accessed 
 This means that cold storage is the cheapest and the least performant one. 
 A standard example is object storage (AWS S3, MinIO, Ceph).
 
-### Multi-tier Storage
 
 ## Do you need a new data format?
 
@@ -103,18 +97,11 @@ Another tools: apache orc, feather (apache arrow), tiledb, zarr
 
 ## Basics of Big Data Architecture and Why Does It Matter?
 
+System layers: layers, highlight storage and processing,
 
-### System Layers
+Lambda architecture: how lambda affect embeddings
 
-layers, highlight storage and processing,
-
-### Lambda Architecture
-
-how lambda affect embeddings
-
-### Kappa Architecture
-
-how kappa affect embeddings
+Kappa architecture: how kappa affect embeddings
 
 
 
@@ -181,7 +168,7 @@ Optional:
 - [MongoDB: What is Big Data Architecture](https://www.mongodb.com/resources/basics/big-data-explained/architecture)
 - [MongoDB: Data Lake Architecture](https://www.mongodb.com/resources/basics/databases/data-lake-architecture)
 - [MinIO Blog: "The Architect’s Guide: A Modern Datalake Reference Architecture"](https://blog.min.io/the-architects-guide-a-modern-datalake-reference-architecture/)
-- [Databricks: Lambda Architecture](https://www.databricks.com/glossary/lambda-architecture)
+- [Databricks Glossary: Lambda Architecture](https://www.databricks.com/glossary/lambda-architecture)
 - [Bartosz Konieczny: Zeta Architecture](https://www.waitingforcode.com/general-big-data/zeta-architecture/read)
 - [Databricks: "Delta vs. Lambda: Why Simplicity Trumps Complexity for Data Pipelines"](https://www.databricks.com/blog/2020/11/20/delta-vs-lambda-why-simplicity-trumps-complexity-for-data-pipelines.html)
 
