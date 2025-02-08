@@ -7,9 +7,9 @@ toc = false
 Hey, I'm Rodion.
 
 I'm interested in:
-- Model Inference
-- MLOps/LLMOps & ML Systems Reliability
+- MLOps
 - Recommender Systems
+- Information Retrieval
 - Math
 
 As an MLOps Engineer with over 5 years of experience,
