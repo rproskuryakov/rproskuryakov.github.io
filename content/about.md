@@ -26,17 +26,17 @@ Key Skills & Technologies: `Python`, `SQL`, `FastAPI`, `Triton Inference Server`
 # Work experience (5 years)
 
 ### X5, Grocery E-com
-**MLOps Engineer, January 2025 - Present time**
+**MLOps Engineer, 2025 - Present time**
 
 ### Wildberries, E-com
 
-**MLOps Engineer, April 2024 – December 2024**
+**MLOps Engineer, 2024**
 
 * Documented all business processes of the MLOps team using BPMN diagrams.
 
 ### Zvuk, Audio streaming service
 
-**ML Engineer, RecSys Team, September 2022 – September 2023**
+**ML Engineer, RecSys Team, 2022 – 2023**
 
 * Crawled an external metadata on artists, songs and releases and enriched the internal database. 
 * Optimized performance of multiple backend recommender services. Drastically reduced latency.
@@ -45,7 +45,7 @@ Key Skills & Technologies: `Python`, `SQL`, `FastAPI`, `Triton Inference Server`
 
 ### GlowByte Consulting, BI & BigData Consulting Company
 
-**Senior MLOps Engineer, December 2020 – July 2022, September 2023 – April 2024**
+**Senior MLOps Engineer, 2020 - 2022 **
 
 * Conducted research on transferring vector search from a GPU cluster to Spark distributed computations on ~100 billions of embeddings.
 * Developed a Python package for flexible configuration and conducting experiments on text classification with neural networks.
@@ -58,7 +58,7 @@ times.
 
 ### LC Group, FinTech Company
 
-**Data Scientist, R&D Department, July 2019 – September 2020**
+**Data Scientist, R&D Department, 2019 - 2020**
 
 * Improved intent classification model score by 8\% with BERT fine-tuning.
 * Applied methods for semi-supervised intent mining on unstructured text data.
