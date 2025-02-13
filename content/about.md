@@ -30,7 +30,7 @@ Key Skills & Technologies: `Python`, `SQL`, `FastAPI`, `Triton Inference Server`
 
 ### Wildberries, E-com
 
-**MLOps Engineer, April 2024 – December 2025**
+**MLOps Engineer, April 2024 – December 2024**
 
 * Documented all business processes of the MLOps team using BPMN diagrams.
 
