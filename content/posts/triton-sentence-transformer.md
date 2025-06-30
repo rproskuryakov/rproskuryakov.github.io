@@ -315,7 +315,7 @@ model_warmup [
 ]  
 ```
 
-## Benchmarking Methodology  
+## Benchmarking  
 
 There are many tools available for load testing, with some of the most well-known being the
 [Apache HTTP benchmarking tool (ab)](https://httpd.apache.org/docs/2.4/programs/ab.html),
