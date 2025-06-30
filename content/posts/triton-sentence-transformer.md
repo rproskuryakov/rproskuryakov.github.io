@@ -239,16 +239,16 @@ model_warmup [
      key: "attention_mask"
      value: { 
        data_type: TYPE_INT64
-       dims: [ 4 ]
-       input_data_file: "1/raw_attention_mask"
+       dims: [ 7 ]
+       input_data_file: "raw_attention_mask"
      } 
    } 
    inputs: {
      key: "input_ids"
      value: {
        data_type: TYPE_INT64
-       dims: [ 4 ]
-       input_data_file: "1/raw_input_ids"
+       dims: [ 7 ]
+       input_data_file: "raw_input_ids"
      } 
    } 
  }
@@ -274,21 +274,21 @@ So the final configuration for a warmup will be like this:
 model_warmup [
   { 
     name: "onnx_ort_warmup_min"
-    batch_size: 1
+    batch_size: 256
     inputs: { 
       key: "attention_mask"
       value: { 
         data_type: TYPE_INT64
-        dims: [ 4 ]
-        input_data_file: "1/raw_attention_mask" 
+        dims: [ 7 ]
+        input_data_file: "raw_attention_mask" 
       } 
     }
     inputs: { 
       key: "input_ids"
       value: { 
         data_type: TYPE_INT64
-        dims: [ 4 ]
-        input_data_file: "1/raw_input_ids" 
+        dims: [ 7 ]
+        input_data_file: "raw_input_ids" 
       } 
     } 
   }, 
