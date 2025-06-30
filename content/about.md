@@ -15,9 +15,9 @@ I'm interested in:
 As an MLOps Engineer with over 5 years of experience,
 I have had the opportunity to contribute to a wide range of projects,
 including those focused on NLP, machine learning engineering, and consulting/audit.
-Currently, I work at Wildberries, the largest online retailer in Russia,
+Currently, I work at X5, the largest retailer in Russia,
 where I apply my expertise to drive innovative solutions 
-and optimize machine learning operations.
+and optimize machine learning operations to search and recommender systems.
 
 In my spare time I enjoy swimming.
 
