@@ -1,7 +1,7 @@
 +++
 title = "Deploying a Sentence Transformer with Triton Inference Server"
-date = "2024-11-01"
-draft = true
+date = "2025-06-30"
+draft = false
 description = "This post will guide you through optimizing a retrieval model using Triton Inference Server, covering model deployment, ONNX conversion, and TensorRT acceleration for improved performance and efficiency."
 [taxonomies]
 tags=["triton", "inference", "transformers", "onnxruntime", "tensorrt"]
@@ -324,9 +324,22 @@ There are many tools available for load testing, with some of the most well-know
 Yet, Triton has its own benchmarking tool named 
 [perf_analyser](https://docs.nvidia.com/deeplearning/triton-inference-server/archives/triton-inference-server-2280/user-guide/docs/user_guide/perf_analyzer.html).
 It measures latency and throughput sending requests to a server. It's optimized for Triton and gives the closest results you can get 
-to performance while using official clients. Besides other features perf_analyzer allows to collect GPU utilization metrics which
-are crucial to model inference.
+to performance while using official clients. Besides other features, perf_analyzer allows collecting GPU utilization metrics which
+are crucial to model inference. 
+
+For this particular comparison it was run using virtual machine with the following configuration: 
+AMD EPYC with Nvidia Ampere A100, 1GPU, 28vCPU, 119Gb RAM. Performance analyzer was run with 1 concurrent request without dynamic batching enabled.
+
+| Backend Type  | Throughput, infer/sec | Avg Latency, ms | Latency p50, ms | Latency p90, ms | Latency p99, ms |
+|---------------|-----------------------|-----------------|-----------------|-----------------|-----------------|
+| Python        | 4.9                   | 202.9           | 154.9           | 385.7           | 405.7           |
+| ONNX          | 137.3                 | 7.27            | 7.13            | 8.75            | 9.09            |
+| ONNX+TensorRT | 150.2                 | 6.65            | 6.96            | 7.34            | 7.68            |
   
+
+The drastic difference can be seen between Python and ONNX backends with ONNX having almost 28x throughput and having 28x less avg latency. 
+The difference between ONNX and ONNX with TensorRT acceleration enabled is more subtle. TensorRT gives ~10% of improvement in throughput and avg latency being ~10% lower.
+
 ## What's next?  
   
 This post, of course, cannot cover every aspect of deploying a model with Triton Inference Server.
