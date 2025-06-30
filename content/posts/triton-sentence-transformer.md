@@ -32,7 +32,7 @@ In contrast, Triton Inference Server is built specifically for these tasks, prov
   
 In this tutorial, I will walk you through deploying the `intfloat/multilingual-e5-large` model using the Triton Inference Server.
 We'll also explore how to convert the model to the ONNX format and optimise it with the TensorRT Execution Provider for ONNX Runtime.
-The code is executed on the following server configuration: Intel® Xeon® Gold 6230 8 vCPU, Nvidia Tesla V100 32 vRAM HBM, 48Gb RAM.
+The code is executed on the following server configuration: AMD EPYC with Nvidia Ampere A100, 1GPU, 28vCPU, 119Gb RAM.
 All the code is available in [this repository](https://github.com/rproskuryakov/triton-sentence-transformer-tutorial).
 So, let's get started!
 
