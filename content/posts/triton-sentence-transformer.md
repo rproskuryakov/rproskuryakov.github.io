@@ -322,8 +322,8 @@ There are many tools available for load testing, with some of the most well-know
 [JMeter](https://jmeter.apache.org/), and [Locust](https://locust.io/).
 
 Yet, Triton has its own benchmarking tool named 
-[perf_analyser](https://docs.nvidia.com/deeplearning/triton-inference-server/archives/triton-inference-server-2280/user-guide/docs/user_guide/perf_analyzer.html).
-It measures latency and throughput sending requests to a server. It's optimized for Triton and gives the closest results you can get 
+[perf_analyzer](https://docs.nvidia.com/deeplearning/triton-inference-server/archives/triton-inference-server-2280/user-guide/docs/user_guide/perf_analyzer.html).
+It measures latency and throughput sending requests to the server. It's optimized for Triton and gives the closest results you can get 
 to performance while using official clients. Besides other features, perf_analyzer allows collecting GPU utilization metrics which
 are crucial to model inference. 
 
@@ -369,7 +369,7 @@ through the [Triton TensorRT backend](https://github.com/triton-inference-server
 
 ### Tuning Triton Parameters
 
-To fine-tune Triton parameters for inference, you can use the [model analyzer](https://github.com/triton-inference-server/model_analyzer).
+To fine-tune Triton parameters for inference, you can use the [model_analyzer](https://github.com/triton-inference-server/model_analyzer).
 This tool allows you to do an optimization process of configuration parameters via different algorithms such as bayesian optimization.
 
 [Polygraphy](https://github.com/NVIDIA/TensorRT/tree/main/tools/Polygraphy) is another valuable tool
@@ -408,7 +408,7 @@ With Seldon, you can run Triton instances while benefiting from built-in feature
 A/B testing, Canary deployments, and more.
 
 You might also explore KServe,
-which offers the advantageous feature of scaling deployments down to zero when there is no incoming traffic.
+which offers the helpful feature of scaling deployments down to zero when there is no incoming traffic.
   
 ## Resources  
   
@@ -418,5 +418,4 @@ which offers the advantageous feature of scaling deployments down to zero when t
 - [Optimum: Transformers Extension](https://huggingface.co/docs/optimum/en/index)  
 - [Polygraphy: A Deep Learning Inference Prototyping and Debugging Toolkit](https://github.com/NVIDIA/TensorRT/tree/main/tools/Polygraphy)  
 - [Olive: Hardware-aware Model Optimization Tool](https://github.com/microsoft/Olive)  
-- [Seldon Core: Tool to deploy ML Models with Kubernetes at Scale.](https://github.com/SeldonIO/seldon-core)  
-- [Locust: Load Testing Tool](https://locust.io/)
+- [Seldon Core: Tool to deploy ML Models with Kubernetes at Scale.](https://github.com/SeldonIO/seldon-core)
