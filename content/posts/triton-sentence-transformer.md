@@ -330,11 +330,11 @@ are crucial to model inference.
 For this particular comparison it was run using virtual machine with the following configuration: 
 AMD EPYC with Nvidia Ampere A100, 1GPU, 28vCPU, 119Gb RAM. Performance analyzer was run with 1 concurrent request without dynamic batching enabled.
 
-| Backend Type  | Throughput, infer/sec | Avg Latency, ms | Latency p50, ms | Latency p90, ms | Latency p99, ms |
-|---------------|-----------------------|-----------------|-----------------|-----------------|-----------------|
-| Python        | 4.9                   | 202.9           | 154.9           | 385.7           | 405.7           |
-| ONNX          | 137.3                 | 7.27            | 7.13            | 8.75            | 9.09            |
-| ONNX+TensorRT | 150.2                 | 6.65            | 6.96            | 7.34            | 7.68            |
+| Triton Backend Type   | Throughput, infer/sec | Avg Latency, ms | Latency p50, ms | Latency p90, ms | Latency p99, ms |
+|-----------------------|-----------------------|-----------------|-----------------|-----------------|-----------------|
+| Python + Transformers | 4.9                   | 202.9           | 154.9           | 385.7           | 405.7           |
+| ONNX                  | 137.3                 | 7.27            | 7.13            | 8.75            | 9.09            |
+| ONNX + TensorRT       | 150.2                 | 6.65            | 6.96            | 7.34            | 7.68            |
   
 
 The drastic difference can be seen between Python and ONNX backends with ONNX having almost 28x throughput and having 28x less avg latency. 
