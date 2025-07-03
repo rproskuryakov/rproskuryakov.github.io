@@ -4,7 +4,7 @@ date = "2024-12-01"
 draft = true
 description = "This post covers different considerations on how to build vector search and storage on top of a data lake."
 [taxonomies]
-tags=["embeddings", "vector-databases", "architecture"]
+tags=["embeddings", "vector-databases", "system-design"]
 [extra]
 comment = true
 +++
@@ -12,35 +12,56 @@ comment = true
 
 ## Introduction
 
-Large Language Models are the latest breakthrough in AI field. Since their discovery they are embedded in search engines, chat-bots and recommender systems. A lot of the systems leverage Retrieval-Augmented Generation (RAG). This shift has transformed the tools ML engineers use in their production environments. Yet, one major challenge complicated by RAG systems often overlooked. Majority of these systems use vector search. 
+Large Language Models are one of the biggest breakthrough in the AI field.
+Since their discovery they have become a go-to solution in search engines, chatbots and recommender systems.
+Also, plenty of systems leverage Retrieval-Augmented Generation (RAG) or the agentic approach.
+This shift has drastically transformed the tools ML engineers use in their production environments.
+One major challenge in LLM systems is usually overlooked though. 
 
-Vector search is not a new thing. It it widely adopted in the industry since the word2vec discovery. Not only in NLP but in other branches of machine learning. Recommender Systems and CV based on embeddings as well. The problem is how to choose a proper way of vector storage, computing and search. Also it's hard to tune a specific tool for a particular task. There are more than few ways to build a vector index. Number of hyperparameters scale greatly.
+Majority of the LLM systems use vector search which is not new. 
+It has been widely adopted in the industry since the word2vec discovery. 
+Not only in NLP but in other branches of machine learning too. 
 
-There are plenty of proprietary and open-source vector databases nowadays. The list grows every month. While they serve the common purpose the devil's in the details. Some vector databases such as pgvector offer seamless integration with your tech stack. Others like Faiss focus on ease of use and performance.
+The problem is how to choose a proper way of vector storage, computing and search.
+Another issue is that it's hard to tune a specific tool for a particular task.
+There are more than few ways to build a vector index so the number of hyperparameters scale greatly.
 
-Despite this, building a reliable solution has become more challenging than ever. Integrating it into your infrastructure adds another layer of complexity. Do you need only online vector search, or do you also need scheduled pipelines? What about your data analytics and data scientists who want to run ad-hoc queries? It's important to keep these needs in mind. Of course, there is no silver bullet. Some companies don't even need a vector database, naive search with numpy fits them. Others need a high-load solution for billions of vectors updated every second. 
+Nowadays, there is a wide spectrum of proprietary and open-source vector databases available.
+The list grows every month.
+Although they serve the common purpose the devil's in the details.
+While some vector search engines such as pgvector offer seamless integration 
+with your tech stack others like faiss focus on ease of use and performance.
 
-This post is an attempt to provide a framework for designing such systems, a list of points to consider. I hope they'll help you in tailoring existing tools for your task at hand.
+Despite this, building a reliable solution has become more challenging than ever.
+Integrating it into your infrastructure adds another layer of complexity.
+Do you need only online vector search, or do you also need scheduled pipelines?
+What about your data analytics and data scientists who would like to run ad-hoc queries?
+It's important to keep these needs in mind. 
+Naturally, here is no silver bullet. 
+Some companies don't even need a vector database, naive search with numpy fits them.
+Others need a high-load solution for billions of vectors updated every second. 
+
+This post is an attempt to provide a framework for designing such systems
+and list of points to consider.
+I hope they'll help you in tailoring existing tools for your particular task.
 
 ## Taxonomy of Vector Databases
 
- indexing strategies; tradeoffs: scaling, performance, ease of integration)
+DBMS commonly divided into client-server and embedded.
+Client-server is the type all are familiar with as this type is present in the majority of IT-systems. 
+But the new (or not so) DBMS type has been emerging. Meet embedded databases. 
+Actually, you already know one! SQLite is a great example. Both LanceDB and faiss are the examples of embedded vector databases.
 
-There are two main types of dbms. 
-Client-server is the type we are all familiar. 
-Even more, this type is major in the current systems. 
+Another classification of DBMS is a division into OLTP (Online Transactional Processing) and OLAP (Online Analytical Processing).
+OLTP databases are meant to work under enormous load with requests being small queries. 
+OLAP, on the other hand, are meant for big complex queries which can use lots of joins and other aggregations. 
+PostgreSQL is an OLTP example whilst GreenPlum is an OLAP one.
 
-But, the new (or not so) dbms type emerge. Meet embedded databases.
-Actually, you already know one! SQLite is one. 
-One could argue that sqlite is not built for a production environment.
-
-Also, the dbms can be divided into OLTP (Online Transactional Processing) and OLAP (Online Analytical Processing).
-PostgreSQL is an OLTP example whilst GreenPlum as an OLAP one.
-
-
-One can balanced latency, recall, storage and overall cost by using different indexing algorithms.
-The most known is HNSW but there a a lot more. People even use quantization to lower
-the vectors' memory requirements and to speed up vector search even more.
+Balancing between latency, recall, storage and overall cost can be achieved by
+usage of different vector indexing algorithms.
+The most popular is HNSW but the choice set is much bigger. 
+Even more, there are other options available such as quantization to lower
+the vectors' memory requirements and to speed up vector search further.
 
 ## Use Cases
 
@@ -56,39 +77,38 @@ the required read/write performance and the cost. There are often two tiers, hot
 or three tiers, hot, warm and cold accordingly.
 
 Hot storage tier is the most expensive but provides the best performance. 
-This layer is dedicated to online data processing. 
-PostgreSQL for online transactions is a greate example of a hot storage.
+This layer is usually dedicated to online data processing. 
+PostgreSQL is a usual solution for a hot storage.
 
 Warm storage tier is used for batch processing and OLAP scenarios. 
-It tries to balance middle-performance with middle-costs. 
-ClickHouse or Hadoop are the warm storage examples. 
-Also, any of the DFSs (Distributed File System) could serve a similar purpose.
+It tries to balance middle performance with middle costs. 
+ClickHouse or Hadoop are both the warm storage examples. 
+Any of the DFSs (Distributed File System) could serve a similar purpose.
 
-The last, but not the least, cold storage is used for data that is not accessed on a regular basis.
-This means that cold storage is the cheapest and the least performant one. 
-A standard example is object storage (AWS S3, MinIO, Ceph).
+Last but not least, cold storage's purpose is to store data which are not accessed on a regular basis.
+Therefore, cold storage is the cheapest and the least performant one. 
+A common example is an object storage (AWS S3, MinIO, Ceph).
 
 
 ## Do you need a new data format?
 
-As we divided our storage to few tiers a new question rise. 
-What data format should be used to store embeddings? 
-Well, let's start with our needs. I'd, personally, like to have a format which:
+As we divide our storage to few tiers a new question rise. 
+What data format should one use to store embeddings? 
+Well, let's start with our needs. I, personally, would like to have a format which is:
 - Fast enough for queries including vector search;
 - Compatible with the current processing tools (Spark, Pandas, Polars);
 
-
 Lance is an open-source column-based data storage format designed with ML applications in mind. 
-It is based on parquet and tightly connected to the Apache Arrow ecosystem. 
-That means that Lance files can be read with all the tools you already use for parquet.
-You can load Lance file with pandas as well as polars.
+It is based on parquet specification and tightly connected to the Apache Arrow ecosystem. 
+That means that Lance files can be read with all the tools you already use for processing parquet.
+You can load Lance file with pandas and polars as well.
 
 Lance can store the whole datasets in one file. Audio, video and image data can be stored in a binary format.
 
-But the main advantage of Lance is embedding storage and search optimization.
+The main advantage of Lance is embedding storage and search optimization.
 
 Besides Lance there are a few formats which are arrow-compatible such as Iceberg and Delta Lake. 
-They might be an excellent solution to the general data engineering problem, but their purpose is not
+They might be excellent solutions to the general data engineering problem, but their purpose is not
 to make the life of ML Engineers easier. 
 
 Another tools: apache orc, feather (apache arrow), tiledb, zarr
