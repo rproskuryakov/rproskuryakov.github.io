@@ -2,33 +2,84 @@
 title = "Interleaving, a Retrieval Online Evaluation Method Nobody Talks About"
 date = "2025-07-30"
 draft = true
-description = "This post covers basics of interleaving and its relation to A/B-testing including different industrial use cases."
+description = "A/B-testing has become the main tool for almost any machine learning model online evaluation method. But there is another tool for search ranking and recommender systems in particular, interleaving. Somehow it is not mentioned enough despite its big advantages over A/B-testing in multiple cases. This post aims to close the gap."
 [taxonomies]
 tags=["search", "A/B-testing", "experimenting", "interleaving"]
 [extra]
 comment = true
 +++
 
+## Outline
+
+Motivation for invention of A/B-testing (duration, biases, variance). 
+
+Introduction of interleaving for variance reduction (and sensitivity increase) 
+in online estimation of ranking quality.
+Simple example with bar and light beer and dark beer. 
+
+Introduction to balanced interleaving. 
+Sample statistics. 
+Paired t-test, binomial sign test.
+
+Sensitivity gain. Biases of balanced interleaving. 
+
+General framework for interleaving. Credit attribution and interleaving policy. 
+
+Introduction to Team-Draft interleaving. Test statistics. Bootstrap. 
+
+Drawbacks of Team-Draft.
+
+
+## Outline of second post
+
+Evolution of balanced interleaving to unbiased balanced interleaving.
+
+Evolution of team-draft to general team-draft interleaving.
+
+Final comparison of interleaving methods.
+
+Application in industrial scenario. 
+Usage of interleaving for testing a series of 
+small-impact changes to pack them up into A/B-test in Netflix and DoorDash.
+
+
+## Who is it for?
+
 
 ## Introduction
 
-A/B-testing has become the main tool for almost any machine learning model online evaluation method. 
-But there is another tool for search ranking and recommender systems in particular, interleaving. 
-Somehow it is not mentioned enough despite its big advantages over A/B-testing in multiple cases.
+A/B-testing has become a widely adopted tool for online evaluation of machine learning models
+across the industry in the past 15 years. Despite its advantages, there are still lots of issues to tackle.
+The main culprit of any A/B-test is variance. Multiple efforts has been made throughout recent years to mitigate the problem.
+For instance, the methods such as [CUPED](source link) were developed. 
 
-## Motivation
-
-Cola Example
+Lets look at the variance sources in testing a search engine.
 
 [Beyond A/B Testing: Part 2 – When A/B Tests Struggle with Ranking & Recommendations](https://bananimohapatra.substack.com/p/beyond-ab-testing-part-2-when-ab?utm_source=substack&utm_medium=email&utm_content=share)
 
-## A/B-test disadvantages 
+What randomization unit?
 
-- Variance 
-- Multiple groups
-- Bad model affecting users
+First one: different users bring different contribution. Cola Example
 
-## Basics of interleaving
+Second one: different queries different algorithms. Too much uncertainty because of search queries nature. 
+
+Cola Example
+
+There is another method to reduce variance in such cases almost nobody talks about, interleaving. 
+Originally, it was developed to test search engines, but it can be applied to any online tests of ranking models.
+
+The idea behind interleaving was introduced by Thorsten Joachims in 2002. 
+
+He introduced a method of combining two ranker results and proved that $R_a$ and $R_b$ 
+being the relevance of rankers A and B correspondingly can be evaluated
+by estimation of expectation $E(\frac{C_a - C_b}{C})$.
+If this value is proven to be bigger than zero,  
+then it can be said that the ranker A produces more relevant results than ranker B.
+Such a hypothesis can be tested by using two-tailer paired t-test for samples $c_{a,i}/c_{i}$ and $c_{b,i}/c_{i}$.
+
+Bad model affecting users.
+
+## Interleaving Basics
 
 Several evaluation criteria for a good interleaving method have
 been proposed in the literature: correctness of the declared winning
@@ -40,18 +91,15 @@ advantages and limitations with respect to these criteria
 
 ### Origins and balanced interleaving
 
-The idea behind interleaving was introduced by Thorsten Joachims in 2002. 
-
-He introduced a method of combining two ranker results and proved that $R_a$ and $R_b$ 
-being the relevance of rankers A and B correspondingly can be evaluated
-by estimation of expectation $E(\frac{C_a - C_b}{C})$.
-If this value is proven to be bigger than zero,  
-then it can be said that the ranker A produces more relevant results than ranker B.
-Such a hypothesis can be tested by using two-tailer paired t-test for samples $c_{a,i}/c_{i}$ and $c_{b,i}/c_{i}$.
+Formally, let $A = (a_1, a_2, ..., a_n)$ and $B = (b_1, b_2, ..., b_n)$ be outputs of two different ranking models.
+Let $I = (i_1, i_2, ..., i_n)$ be the combined ranking computed by an interleaving policy. 
+Let $c_1, c_2, ..., c_k$ be the ranks of the clicked items. 
+To derive preference between A and B one compares the number of clicks in the top
+$k = \min\{{j:(i_{c_{max}} = a_j) \or (i_{c_{max}} = b_j)\}}$
 
 In practice, collecting samples that hold under the assumption of t-test so expectations of samples are distributed
 normally can be challenging. In such cases, the author proposes an alternative 
-approach, using the binomial signed test on median $M\frac_{C_a - C_b}{C}$. 
+approach, using the binomial signed test on median $M\frac{C_a - C_b}{C}$.
 
 Joachims also provides an algorithm to produce the combined ranking. 
 
@@ -66,13 +114,45 @@ of the relevance of the links.
 
 [Evaluating Retrieval Performance using Clickthrough data](https://www.cs.cornell.edu/~tj/publications/joachims_02b.pdf)
 
-Thus, balanced interleaving has emerged as a first iteration of the method. 
+Thus, balanced interleaving has emerged as a first iteration of the method.
+
+Latter contributors to the topic introduced the following metric:
+
+$$ \Delta_{AB} = \frac{W_A + \frac{1}{2}T_{AB}}{W_A + W_B + T_{AB}} - 0.5$$
+
+Positive value of $\Delta_{AB}$ indicates thet A > B and negative that B > A.
+
+E.g.
+
+Then the bootstrap method is used to estimate mean of the distribution. 
+Subsamples are formed in such way that queries or sessions are drawn with replacement to each subsample.
+
+One can also use boostrap percentile method to estimate the metric's confidence interval.
+
+## Taxonomy
+
+Generally speaking, interleaving methods strive to increase experiment metric sensitivity by leveraging one or both of the following:
+credit attribution and interleaving policy. 
 
 The simplest interleaving method, balanced interleaving [10,11], is biased
 when comparing lists that are similar but up to small shifts in position [7,21].
 
-[Fidelity, Soundness, and Efficiency of
-Interleaved Comparison Methods](https://staff.fnwi.uva.nl/m.derijke/wp-content/papercite-data/pdf/hofmann-fidelity-2013.pdf)
+The unbalancedness of balanced interleaving (example)
+
+heads (a, b, d, c), tails (d, a, b, c) -> 0.5 - heads -> (a, d, b, c) (too similar to first one)
+
+
+### Team-draft introduction
+Team-Draft Interleaving was introduced in by Filip Radlinski, Madhu Kurup and Thorsten Joachims 
+to partially compensate for drawbacks of balanced interleaving. 
+
+[How Does Clickthrough Data Reflect Retrieval Quality?](https://www.cs.cornell.edu/people/tj/publications/radlinski_etal_08b.pdf)
+
+image
+
+Team-Draft interleaving drawbacks (still has biases). 
+How does the biases affect the quality? If they are random enough, it's okay. 
+They can compensate each other.
 
 [Debiased Balanced Interleaving at Amazon Search](https://assets.amazon.science/a9/c8/c9016a1c47caac6a634768e7491d/debiased-balanced-interleaving-at-amazon-search.pdf)
 
@@ -80,35 +160,72 @@ Counterfactual evaluation framework for credit attribution.
 
 Amazon claims to observe a 60x gain in sensitivity of interleaving over A/B tests.
 
-### Team-draft introduction
-Team-Draft Interleaving was introduced in by Filip Radlinski, Madhu Kurup and Thorsten Joachims. 
 
-[How Does Clickthrough Data Reflect Retrieval Quality?](https://www.cs.cornell.edu/people/tj/publications/radlinski_etal_08b.pdf)
+[Fidelity, Soundness, and Efficiency of
+Interleaved Comparison Methods](https://staff.fnwi.uva.nl/m.derijke/wp-content/papercite-data/pdf/hofmann-fidelity-2013.pdf)
 
-image
 
-Team-Draft interleaving drawbacks
+weak transitivity property for comparing multiple rankers ()
+
+treatment effect mapping (linear weighted least squared model) (sources )
+
+linear model cant work with sign flips 
+probability of the sign disagreement between ab and interleaving
+[Interleaved Online Testing in Large Scale Systems | Amazon Search | DM4IR&Recsys (WWW'23)](https://www.youtube.com/watch?v=qFC5AGT62xw)
+
+[Debiased Balanced Interleaving at Amazon Search](https://assets.amazon.science/a9/c8/c9016a1c47caac6a634768e7491d/debiased-balanced-interleaving-at-amazon-search.pdf)
+
+Counterfactual evaluation framework for credit attribution.
+
+Amazon claims to observe a 60x gain in sensitivity of interleaving over A/B tests.
+
+
+[Fidelity, Soundness, and Efficiency of
+Interleaved Comparison Methods](https://staff.fnwi.uva.nl/m.derijke/wp-content/papercite-data/pdf/hofmann-fidelity-2013.pdf)
+
+
+weak transitivity property for comparing multiple rankers ()
+
+treatment effect mapping (linear weighted least squared model) (sources )
+
+linear model cant work with sign flips 
+probability of the sign disagreement between ab and interleaving
+[Interleaved Online Testing in Large Scale Systems | Amazon Search | DM4IR&Recsys (WWW'23)](https://www.youtube.com/watch?v=qFC5AGT62xw)
+
+
 
 [Team-Draft Interleaving, AIC Analytics Day | Roman Poborchy](https://www.youtube.com/watch?v=voY7waRb_D0)
 
-### Probabilistic interleaving
-Probabilistic Interleaving 
+Remove probabilistic and team-draft interleavings
 
-[A Probabilistic Method for
-Inferring Preferences from Clicks](https://www.cs.ox.ac.uk/people/shimon.whiteson/pubs/hofmanncikm11.pdf)
+[//]: # (### Probabilistic interleaving)
 
-image
+[//]: # (Probabilistic Interleaving )
 
-Probabilistic interleaving drawbacks
+[//]: # ()
+[//]: # ([A Probabilistic Method for)
 
-### Optimized interleaving
-Optimized interleaving
+[//]: # (Inferring Preferences from Clicks]&#40;https://www.cs.ox.ac.uk/people/shimon.whiteson/pubs/hofmanncikm11.pdf&#41;)
 
-[Optimized Interleaving for Online Retrieval Evaluation](https://www.microsoft.com/en-us/research/wp-content/uploads/2013/02/Radlinski_Optimized_WSDM2013.pdf.pdf)
+[//]: # ()
+[//]: # (image)
 
-image
+[//]: # ()
+[//]: # (Probabilistic interleaving drawbacks)
 
-Optimized interleaving drawbacks
+[//]: # ()
+[//]: # (### Optimized interleaving)
+
+[//]: # (Optimized interleaving)
+
+[//]: # ()
+[//]: # ([Optimized Interleaving for Online Retrieval Evaluation]&#40;https://www.microsoft.com/en-us/research/wp-content/uploads/2013/02/Radlinski_Optimized_WSDM2013.pdf.pdf&#41;)
+
+[//]: # ()
+[//]: # (image)
+
+[//]: # ()
+[//]: # (Optimized interleaving drawbacks)
 
 ### Disadvantages of interleaving
 
@@ -161,9 +278,13 @@ AirBnB
 
 ## Conclusion
 
+Доклад wikimedia 
+
+https://www.cs.cornell.edu/people/tj/publications/chapelle_etal_12a.pdf
+
+
 ## Resources
 
-[Interleaved Online Testing in Large Scale Systems | Amazon Search | DM4IR&Recsys (WWW'23)](https://www.youtube.com/watch?v=qFC5AGT62xw)
 
 [Large-Scale Validation and Analysis of Interleaved Search Evaluation | Yahoo](https://github.com/wzhe06/Reco-papers/blob/master/Evaluation/%5BInterLeaving%5D%20Large-Scale%20Validation%20and%20Analysis%20of%20Interleaved%20Search%20Evaluation%20(Yahoo%202012).pdf)
 
