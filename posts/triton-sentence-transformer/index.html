@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<html class="dark light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google-site-verification" content="PT7RzaL9N2wESQb6k9dsgCSqTgmfPYb3nb7vze25j4o" />
+
+    
+
+    
+    
+    
+    <title>
+         Deploying a Sentence Transformer with Triton Inference Server
+        
+    </title>
+
+        
+            <meta property="og:title" content="Deploying a Sentence Transformer with Triton Inference Server" />
+        
+     
+
+     
+         
+             <meta property="og:description" content="This post will guide you through optimizing a retrieval model using Triton Inference Server, covering model deployment, ONNX conversion, and TensorRT acceleration for improved performance and efficiency." />
+         
+     
+
+     
+         
+             <meta name="description" content="This post will guide you through optimizing a retrieval model using Triton Inference Server, covering model deployment, ONNX conversion, and TensorRT acceleration for improved performance and efficiency." />
+         
+    
+
+    
+    
+        <link rel="icon" type="image/x-icon" href="https://rproskuryakov.github.io/favicon.ico">
+        <link rel="apple-touch-icon" sizes="180x180" href="https://rproskuryakov.github.io/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="https://rproskuryakov.github.io/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="https://rproskuryakov.github.io/favicon-16x16.png">
+        <link rel="manifest" href="/site.webmanifest">
+    
+
+    
+    
+        <link href=https://rproskuryakov.github.io/fonts.css rel="stylesheet" />
+    
+
+    
+    
+
+    
+    
+        <script src=https://rproskuryakov.github.io/js/codeblock.js></script>
+    
+
+    
+    
+        <script src=https://rproskuryakov.github.io/js/toc.js></script>
+    
+
+    
+    
+        <script src=https://rproskuryakov.github.io/js/note.js></script>
+    
+
+    
+        
+            <script>
+            MathJax = {
+              tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+              }
+            };
+            </script>
+        
+        <script type="text/javascript" id="MathJax-script" async
+          src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+        </script>
+    
+
+    
+    <link rel="alternate" type="application/atom+xml" title="Rodion Proskuriakov" href="https://rproskuryakov.github.io/atom.xml">
+
+
+    
+    
+        <link rel="stylesheet" type="text/css" href=https://rproskuryakov.github.io/theme/light.css />
+    
+
+    <!-- Set the correct theme in the script -->
+    <script src=https://rproskuryakov.github.io/js/themetoggle.js></script>
+    
+        <script>setTheme("light");</script>
+    
+
+    <link rel="stylesheet" type="text/css" media="screen" href=https://rproskuryakov.github.io/main.css />
+
+    
+</head>
+
+
+<body>
+    <div class="content">
+        <header>
+    <div class="main">
+        <a href=https:&#x2F;&#x2F;rproskuryakov.github.io>Rodion Proskuriakov</a>
+
+        <div class="socials">
+            
+            <a rel="me" href="https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;r-proskuriakov" class="social">
+                <img alt=linkedin src=https://rproskuryakov.github.io/social_icons/linkedin.svg>
+            </a>
+            
+            <a rel="me" href="https:&#x2F;&#x2F;github.com&#x2F;rproskuryakov" class="social">
+                <img alt=github src=https://rproskuryakov.github.io/social_icons/github.svg>
+            </a>
+            
+        </div>
+    </div>
+
+    <nav>
+        
+        <a href=https://rproskuryakov.github.io/posts style="margin-left: 0.5em">&#x2F;posts</a>
+        
+        <a href=https://rproskuryakov.github.io/about style="margin-left: 0.5em">&#x2F;about</a>
+        
+        <a href=https://rproskuryakov.github.io/tags style="margin-left: 0.5em">&#x2F;tags</a>
+        
+
+        
+    </nav>
+</header>
+
+
+        
+        
+    
+<main>
+    <article>
+        <div class="title">
+            
+            
+    <div class="page-header">
+        Deploying a Sentence Transformer with Triton Inference Server<span class="primary-color" style="font-size: 1.6em">.</span>
+    </div>
+
+
+                <div class="meta">
+                    
+                        Posted on <time>2025-06-30</time>
+                    
+
+                    
+
+                    
+
+                    
+                    
+                            <span class="tags-label"> :: Tags:</span>
+                            <span class="tags">
+                                    <a href="https://rproskuryakov.github.io/tags/triton/" class="post-tag">triton</a>, 
+                                
+                                    <a href="https://rproskuryakov.github.io/tags/inference/" class="post-tag">inference</a>, 
+                                
+                                    <a href="https://rproskuryakov.github.io/tags/transformers/" class="post-tag">transformers</a>, 
+                                
+                                    <a href="https://rproskuryakov.github.io/tags/onnxruntime/" class="post-tag">onnxruntime</a>, 
+                                
+                                    <a href="https://rproskuryakov.github.io/tags/tensorrt/" class="post-tag">tensorrt</a>
+                                
+                            </span>
+                    
+
+                    
+                    
+
+                    
+
+                </div>
+        </div>
+
+        
+
+        
+        
+        
+            <div class="toc-container">
+                <h1 class="toc-title">Table of Contents</h1>
+                <ul class="toc-list">
+                    
+                        <li>
+                            <a href="https://rproskuryakov.github.io/posts/triton-sentence-transformer/#introduction">Introduction</a>
+                            
+                        </li>
+                    
+                        <li>
+                            <a href="https://rproskuryakov.github.io/posts/triton-sentence-transformer/#overview">Overview</a>
+                            
+                        </li>
+                    
+                        <li>
+                            <a href="https://rproskuryakov.github.io/posts/triton-sentence-transformer/#let-s-speed-up-the-model">Let&#x27;s speed up the model</a>
+                            
+                                <ul>
+                                    
+                                        <li>
+                                            <a href="https://rproskuryakov.github.io/posts/triton-sentence-transformer/#baseline-python-backend">Baseline: Python Backend</a>
+                                        </li>
+
+                                        
+                                    
+                                        <li>
+                                            <a href="https://rproskuryakov.github.io/posts/triton-sentence-transformer/#what-is-onnx">What is ONNX</a>
+                                        </li>
+
+                                        
+                                    
+                                        <li>
+                                            <a href="https://rproskuryakov.github.io/posts/triton-sentence-transformer/#connecting-parts-of-the-pipeline">Connecting parts of the pipeline</a>
+                                        </li>
+
+                                        
+                                    
+                                        <li>
+                                            <a href="https://rproskuryakov.github.io/posts/triton-sentence-transformer/#tensorrt-acceleration">TensorRT Acceleration</a>
+                                        </li>
+
+                                        
+                                    
+                                </ul>
+                            
+                        </li>
+                    
+                        <li>
+                            <a href="https://rproskuryakov.github.io/posts/triton-sentence-transformer/#benchmarking">Benchmarking</a>
+                            
+                        </li>
+                    
+                        <li>
+                            <a href="https://rproskuryakov.github.io/posts/triton-sentence-transformer/#what-s-next">What&#x27;s next?</a>
+                            
+                                <ul>
+                                    
+                                        <li>
+                                            <a href="https://rproskuryakov.github.io/posts/triton-sentence-transformer/#enhancing-performance">Enhancing Performance</a>
+                                        </li>
+
+                                        
+                                    
+                                        <li>
+                                            <a href="https://rproskuryakov.github.io/posts/triton-sentence-transformer/#model-quantization">Model Quantization</a>
+                                        </li>
+
+                                        
+                                    
+                                        <li>
+                                            <a href="https://rproskuryakov.github.io/posts/triton-sentence-transformer/#tuning-triton-parameters">Tuning Triton Parameters</a>
+                                        </li>
+
+                                        
+                                    
+                                        <li>
+                                            <a href="https://rproskuryakov.github.io/posts/triton-sentence-transformer/#custom-triton-backend">Custom Triton Backend</a>
+                                        </li>
+
+                                        
+                                    
+                                </ul>
+                            
+                        </li>
+                    
+                        <li>
+                            <a href="https://rproskuryakov.github.io/posts/triton-sentence-transformer/#bonus-production-considerations">Bonus: production considerations</a>
+                            
+                        </li>
+                    
+                        <li>
+                            <a href="https://rproskuryakov.github.io/posts/triton-sentence-transformer/#resources">Resources</a>
+                            
+                        </li>
+                    
+                </ul>
+            </div>
+        
+        
+
+        <section class="body">
+            <h2 id="introduction"><a class="zola-anchor" href="#introduction" aria-label="Anchor link for: introduction">Introduction</a></h2>
+<p>I was recently tasked with updating a fine-tuned retrieval model deployed on the Triton Inference Server.
+The model was underperforming, and the customer needed lower latency and a higher requests-per-second (RPS) rate.
+Since the deployment was written in pure PyTorch, which isn’t the most efficient solution for production, optimization was necessary.
+The process turned out to be quite an interesting journey, so I wanted to share my experience.</p>
+<p>You might wonder why we use a specialized inference server instead of simply deploying the model in a FastAPI service. 
+There are several reasons for this.</p>
+<p>First, FastAPI is not designed specifically for deploying machine learning models;
+its strength lies in handling high-load backend services with varying levels of business logic complexity.</p>
+<p>Second, FastAPI lacks resource management features like GPU utilization, which is crucial for the performance of ML models.
+Additionally, advanced optimizations such as dynamic batching, caching, and I/O binding would need to be implemented manually in FastAPI.
+In contrast, Triton Inference Server is built specifically for these tasks, providing efficient use of computational resources and fine-grained control over your infrastructure.</p>
+<h2 id="overview"><a class="zola-anchor" href="#overview" aria-label="Anchor link for: overview">Overview</a></h2>
+<p>In this tutorial, I will walk you through deploying the <code>intfloat/multilingual-e5-large</code> model using the Triton Inference Server.
+We'll also explore how to convert the model to the ONNX format and optimise it with the TensorRT Execution Provider for ONNX Runtime.
+The code is executed on the following server configuration: AMD EPYC with Nvidia Ampere A100, 1GPU, 28vCPU, 119Gb RAM.
+All the code is available in <a href="https://github.com/rproskuryakov/triton-sentence-transformer-tutorial">this repository</a>.
+So, let's get started!</p>
+<h2 id="let-s-speed-up-the-model"><a class="zola-anchor" href="#let-s-speed-up-the-model" aria-label="Anchor link for: let-s-speed-up-the-model">Let's speed up the model</a></h2>
+<h3 id="baseline-python-backend"><a class="zola-anchor" href="#baseline-python-backend" aria-label="Anchor link for: baseline-python-backend">Baseline: Python Backend</a></h3>
+<p>Triton Inference Server supports multiple backends, enabling the deployment of a wide range of models,
+from boosting models to large language models (LLMs).</p>
+<p>The easiest way to deploy a model with Triton is to use the Python backend,
+allowing computations to be performed via the <a href="https://huggingface.co/docs/transformers/v4.44.0/en/main_classes/pipelines">Hugging Face pipeline</a>.</p>
+<p>For the Python backend, the model's implementation needs to be placed in 
+the <code>&lt;model_name&gt;/1/model.py</code> file.
+The standard directory structure for deploying a model on Triton 
+can be found in the <a href="https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/model_repository.html#repository-layout">official documentation</a>.</p>
+<p>To get started, define a class named <code>TritonPythonModel</code> and implement the <code>execute</code> method.
+Optionally, you can also implement the <code>initialize</code> and <code>finalize</code> methods 
+if the model requires resource loading before execution or clean-up tasks before shutting down.</p>
+<pre data-lang="python" style="background-color:#2e3440;color:#d8dee9;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#81a1c1;">from </span><span>transformers </span><span style="color:#81a1c1;">import </span><span>pipeline  
+</span><span style="color:#81a1c1;">import </span><span>triton_python_backend_utils </span><span style="color:#81a1c1;">as </span><span>pb_utils  
+</span><span>  
+</span><span>  
+</span><span style="color:#81a1c1;">class </span><span style="color:#8fbcbb;">TritonPythonModel</span><span>:  
+</span><span>    </span><span style="color:#616e88;">&quot;&quot;&quot;
+</span><span style="color:#616e88;">    Your Python model must use the same class name.
+</span><span style="color:#616e88;">    Every Python model that is created must have &quot;TritonPythonModel&quot; 
+</span><span style="color:#616e88;">    as the class name. 
+</span><span style="color:#616e88;">    &quot;&quot;&quot;  
+</span><span>    </span><span style="color:#81a1c1;">def </span><span style="color:#88c0d0;">initialize</span><span>(self</span><span style="color:#eceff4;">, </span><span>args):  
+</span><span>        </span><span style="color:#81a1c1;">self.</span><span>_pipeline </span><span style="color:#81a1c1;">= </span><span style="color:#88c0d0;">pipeline</span><span>(  
+</span><span>            </span><span style="color:#a3be8c;">&quot;feature-extraction&quot;</span><span style="color:#eceff4;">,
+</span><span>            model</span><span style="color:#81a1c1;">=</span><span style="color:#a3be8c;">&quot;intfloat/multilingual-e5-large&quot;</span><span style="color:#eceff4;">,
+</span><span>        )  
+</span><span>        
+</span><span>    </span><span style="color:#81a1c1;">def </span><span style="color:#88c0d0;">execute</span><span>(self</span><span style="color:#eceff4;">, </span><span>requests):  
+</span><span>        responses </span><span style="color:#81a1c1;">= </span><span>[]  
+</span><span>        </span><span style="color:#81a1c1;">for </span><span>request </span><span style="color:#81a1c1;">in </span><span>requests: 
+</span><span>            input_ </span><span style="color:#81a1c1;">= </span><span>pb_utils</span><span style="color:#81a1c1;">.</span><span style="color:#88c0d0;">get_input_tensor_by_name</span><span>(request</span><span style="color:#eceff4;">, </span><span style="color:#a3be8c;">&quot;text&quot;</span><span>)  
+</span><span>            input_string </span><span style="color:#81a1c1;">= </span><span>input_</span><span style="color:#81a1c1;">.</span><span style="color:#88c0d0;">as_numpy</span><span>()  
+</span><span>            requests_texts </span><span style="color:#81a1c1;">= </span><span>[i[</span><span style="color:#b48ead;">0</span><span>]</span><span style="color:#81a1c1;">.</span><span style="color:#88c0d0;">decode</span><span>(</span><span style="color:#a3be8c;">&quot;utf-8&quot;</span><span>) </span><span style="color:#81a1c1;">for </span><span>i </span><span style="color:#81a1c1;">in </span><span>input_string]  
+</span><span>  
+</span><span>            batch </span><span style="color:#81a1c1;">= self.</span><span style="color:#88c0d0;">tokenizer</span><span>(  
+</span><span>                requests_texts</span><span style="color:#eceff4;">,
+</span><span>                max_length</span><span style="color:#81a1c1;">=</span><span style="color:#b48ead;">512</span><span style="color:#eceff4;">,
+</span><span>                padding</span><span style="color:#81a1c1;">=True</span><span style="color:#eceff4;">,
+</span><span>                truncation</span><span style="color:#81a1c1;">=True</span><span style="color:#eceff4;">,
+</span><span>                return_tensors</span><span style="color:#81a1c1;">=</span><span style="color:#a3be8c;">&quot;np&quot;</span><span style="color:#eceff4;">,
+</span><span>            ) 
+</span><span>            responses</span><span style="color:#81a1c1;">.</span><span style="color:#88c0d0;">append</span><span>(  
+</span><span>                pb_utils</span><span style="color:#81a1c1;">.</span><span style="color:#88c0d0;">InferenceResponse</span><span>(  
+</span><span>                    output_tensors</span><span style="color:#81a1c1;">=</span><span>[
+</span><span>                        pb_utils</span><span style="color:#81a1c1;">.</span><span style="color:#88c0d0;">Tensor</span><span>(  
+</span><span>                            </span><span style="color:#a3be8c;">&quot;output_input_ids&quot;</span><span style="color:#eceff4;">,
+</span><span>                            batch[</span><span style="color:#a3be8c;">&quot;input_ids&quot;</span><span>]</span><span style="color:#eceff4;">,
+</span><span>                        )</span><span style="color:#eceff4;">, </span><span>pb_utils</span><span style="color:#81a1c1;">.</span><span style="color:#88c0d0;">Tensor</span><span>(  
+</span><span>                            </span><span style="color:#a3be8c;">&quot;output_attention_mask&quot;</span><span style="color:#eceff4;">,
+</span><span>                            batch[</span><span style="color:#a3be8c;">&quot;attention_mask&quot;</span><span>]</span><span style="color:#eceff4;">,
+</span><span>                        )
+</span><span>                    ]
+</span><span>                )
+</span><span>            )  
+</span><span>        </span><span style="color:#81a1c1;">return </span><span>responses  
+</span></code></pre>
+<p>In the model configuration file, you must define a model name and choose a backend.</p>
+<pre data-lang="prototext" style="background-color:#2e3440;color:#d8dee9;" class="language-prototext "><code class="language-prototext" data-lang="prototext"><span>name: &quot;multilingual-e5-large&quot;  
+</span><span>backend: &quot;python&quot;  
+</span></code></pre>
+<p>You also need to define inputs and outputs of the model which include names, data types and dimensions.<br />
+The string type always has a size of one dimension.</p>
+<pre data-lang="prototext" style="background-color:#2e3440;color:#d8dee9;" class="language-prototext "><code class="language-prototext" data-lang="prototext"><span>input [  
+</span><span> { 
+</span><span>   name: &quot;text&quot;
+</span><span>   data_type: TYPE_STRING
+</span><span>   dims: [ 1 ]
+</span><span> }
+</span><span>]  
+</span><span>output [  
+</span><span> { 
+</span><span>   name: &quot;output_vector&quot;
+</span><span>   data_type: TYPE_FP32
+</span><span>   dims: [ 1024 ]
+</span><span> }
+</span><span>]  
+</span></code></pre>
+<h3 id="what-is-onnx"><a class="zola-anchor" href="#what-is-onnx" aria-label="Anchor link for: what-is-onnx">What is ONNX</a></h3>
+<p>ONNX is an open-source, hardware-agnostic format for storing and optimizing machine learning models.
+It supports a wide range of neural network architectures as well as some classical models.
+One of its key advantages is the availability of a dedicated ONNX runtime,
+which can be used for efficient inference across various environments.</p>
+<p>There are multiple ways to convert a transformer model to the ONNX format.
+A high-level approach involves using the <code>optimum-cli</code> tool, an extension of the Transformers library. 
+This tool is specifically designed to convert transformer models into various formats,
+including ONNX, and optimize them for faster inference.
+You can find the complete list of supported architectures <a href="https://huggingface.co/docs/optimum/exporters/onnx/overview">here</a>.
+For this post you should install optimum via pip or poetry with the proper dependencies. For example, installation with pip looks like:</p>
+<pre data-lang="bash" style="background-color:#2e3440;color:#d8dee9;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#88c0d0;">pip</span><span> install optimum</span><span style="color:#81a1c1;">[</span><span>exporters,onnxruntime</span><span style="color:#81a1c1;">]
+</span></code></pre>
+<p>For a more low-level conversion method,
+you can refer to the <a href="https://pytorch.org/docs/stable/onnx.html">official PyTorch documentation</a>.
+Additionally, if you want to perform a quality check during conversion with Optimum,
+you will need to install the <code>accelerate</code> package.</p>
+<pre data-lang="bash" style="background-color:#2e3440;color:#d8dee9;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#88c0d0;">optimum-cli</span><span> export onnx --model intfloat/multilingual-e5-large </span><span style="color:#81a1c1;">\
+</span><span>--task feature-extraction  --library-name sentence_transformers  --framework pt  models/v2/multilingual-e5-large-onnx/1/
+</span></code></pre>
+<p>Optimum-CLI requires only one argument: the model name or the path to the model. Optionally, you can include a task flag from a predefined list. If this parameter is not provided, Optimum will attempt to infer it automatically from the model. We will also specify the library name and the original framework of the model.<br />
+You can view the complete list of accepted parameters <a href="https://huggingface.co/docs/optimum/en/exporters/onnx/usage_guides/export_a_model#exporting-a-model-to-onnx-using-the-cli">here</a>.</p>
+<p>Let’s verify that the output of the converted model matches the output of the original model.<br />
+We’ll use absolute and relative error to assess numerical stability following the conversion.</p>
+<h3 id="connecting-parts-of-the-pipeline"><a class="zola-anchor" href="#connecting-parts-of-the-pipeline" aria-label="Anchor link for: connecting-parts-of-the-pipeline">Connecting parts of the pipeline</a></h3>
+<p>Triton doesn’t automatically handle preprocessing and postprocessing steps,
+so you’ll need to implement these yourself.
+Thankfully, this is straightforward, and I use the same approach as with the baseline deployment.</p>
+<p>Now that our entire pipeline is deployed, do we need to call each part manually from the client?
+Not at all – Triton provides solutions for this.
+There are two options: Model Ensemble and Business Logic Scripting (BLS).
+Model Ensemble is ideal for pipelines that can be represented as directed acyclic graphs (DAGs),
+meaning they have no loops or conditional flows, which works perfectly for our pipeline.</p>
+<h3 id="tensorrt-acceleration"><a class="zola-anchor" href="#tensorrt-acceleration" aria-label="Anchor link for: tensorrt-acceleration">TensorRT Acceleration</a></h3>
+<p>It’s widely known that models using FP32 weights can be accelerated by converting them to FP16.
+ONNX Runtime offers a TensorRT Execution Provider,
+which improves the performance of ONNX models with just-in-time optimization for specific hardware,
+including converting them to FP16.
+While this conversion can significantly boost inference speed,
+it's important to ensure that the converted model produces results similar to the original.</p>
+<p>For example, the <code>intfloat/multilingual-e5-large</code> model, based on the XLMRoberta architecture,
+includes LayerNorm layers,
+which are known to cause issues when converted to FP16.
+As a result, it’s often better to use mixed precision,
+converting most layers to FP16 while keeping LayerNorm layers in FP32.</p>
+<p>A basic configuration of TensorRT acceleration in a model’s proto-config looks like this:</p>
+<pre data-lang="prototext" style="background-color:#2e3440;color:#d8dee9;" class="language-prototext "><code class="language-prototext" data-lang="prototext"><span>optimization {
+</span><span>  execution_accelerators { 
+</span><span>    gpu_execution_accelerator : [
+</span><span>      { 
+</span><span>        name : &quot;tensorrt&quot;
+</span><span>        parameters { key: &quot;precision_mode&quot; value: &quot;FP16&quot; }
+</span><span>        parameters { key: &quot;trt_layer_norm_fp32_fallback&quot; value: &quot;true&quot;}
+</span><span>        parameters { key: &quot;max_workspace_size_bytes&quot; value: &quot;4294967296&quot; }
+</span><span>      }
+</span><span>    ]
+</span><span>  }
+</span><span>}  
+</span></code></pre>
+<p>According to the <a href="https://github.com/triton-inference-server/onnxruntime_backend">Triton ONNX Runtime Backend docs</a>:</p>
+<ul>
+<li>precision_mode: The precision used for optimization. Allowed values are &quot;FP32&quot;, &quot;FP16&quot; and &quot;INT8&quot;. The default value is &quot;FP32&quot;.</li>
+<li>max_workspace_size_bytes: The maximum GPU memory the model can use temporarily during execution. The default value is 1GB.</li>
+<li><a href="https://onnxruntime.ai/docs/execution-providers/TensorRT-ExecutionProvider.html#trt_layer_norm_fp32_fallback">trt_layer_norm_fp32_fallback</a>: force Pow + Reduce ops in layer norm to FP32. Allowed values are “true” and “false”.</li>
+</ul>
+<p>How does the TensorRT Execution Provider optimize a model during runtime?</p>
+<p>First, it attempts to fuse layers wherever possible,
+allowing the provider to replace them with high-performance implementations
+optimized for the specific hardware used during runtime.</p>
+<p>However, building an engine from scratch is a resource-intensive process.
+After layer fusion, the provider runs timing tests to determine the fastest implementations for the target GPU.
+These tests require several inputs, so the model may initially perform slowly right after deployment.
+Fortunately, this warm-up phase can be completed before the model starts handling requests,
+and Triton's model definition includes a dedicated section for configuring this.</p>
+<p>To achieve optimal performance, it's recommended to experiment with the <code>max_workspace_size_bytes</code> parameter.</p>
+<pre data-lang="prototext" style="background-color:#2e3440;color:#d8dee9;" class="language-prototext "><code class="language-prototext" data-lang="prototext"><span>model_warmup [  
+</span><span> { 
+</span><span>   name: &quot;onnx_ort_warmup_min&quot;
+</span><span>   batch_size: 1
+</span><span>   inputs: {
+</span><span>     key: &quot;attention_mask&quot;
+</span><span>     value: { 
+</span><span>       data_type: TYPE_INT64
+</span><span>       dims: [ 7 ]
+</span><span>       input_data_file: &quot;raw_attention_mask&quot;
+</span><span>     } 
+</span><span>   } 
+</span><span>   inputs: {
+</span><span>     key: &quot;input_ids&quot;
+</span><span>     value: {
+</span><span>       data_type: TYPE_INT64
+</span><span>       dims: [ 7 ]
+</span><span>       input_data_file: &quot;raw_input_ids&quot;
+</span><span>     } 
+</span><span>   } 
+</span><span> }
+</span><span>]  
+</span></code></pre>
+<p>Since our model requires two inputs, we need to define both, specifying their data types, dimensions, and corresponding data files.
+You can find the script for preparing these data files <a href="https://github.com/rproskuryakov/triton-sentence-transformer-tutorial/blob/main/scripts/serialize_data_for_warmup.py">here</a>.</p>
+<p>It’s important to note that the TensorRT provider can <a href="https://huggingface.co/docs/optimum/en/onnxruntime/usage_guides/gpu#tensorrt-engine-build-and-warmup">rebuild the model on the fly</a>
+if it receives a request with dimensions that differ from those previously encountered.
+To account for this, we need to include a warm-up phase.</p>
+<p>Our model will infer with a maximum batch size of 256,
+and we know the maximum number of input tokens for the <code>multilingual-e5-large</code> model is 512.
+Therefore, we will prepare two sets of warm-up files: one with a batch size of 1 and 4 tokens,
+assuming most inputs will include more tokens, and another with a batch size of 256 and 512 tokens per sample.</p>
+<p>So the final configuration for a warmup will be like this:</p>
+<pre data-lang="prototext" style="background-color:#2e3440;color:#d8dee9;" class="language-prototext "><code class="language-prototext" data-lang="prototext"><span>model_warmup [
+</span><span>  { 
+</span><span>    name: &quot;onnx_ort_warmup_min&quot;
+</span><span>    batch_size: 256
+</span><span>    inputs: { 
+</span><span>      key: &quot;attention_mask&quot;
+</span><span>      value: { 
+</span><span>        data_type: TYPE_INT64
+</span><span>        dims: [ 7 ]
+</span><span>        input_data_file: &quot;raw_attention_mask&quot; 
+</span><span>      } 
+</span><span>    }
+</span><span>    inputs: { 
+</span><span>      key: &quot;input_ids&quot;
+</span><span>      value: { 
+</span><span>        data_type: TYPE_INT64
+</span><span>        dims: [ 7 ]
+</span><span>        input_data_file: &quot;raw_input_ids&quot; 
+</span><span>      } 
+</span><span>    } 
+</span><span>  }, 
+</span><span>  { 
+</span><span>    name: &quot;onnx_ort_warmup_max&quot; 
+</span><span>    batch_size: 256 
+</span><span>    inputs: { 
+</span><span>      key: &quot;attention_mask&quot;
+</span><span>      value: { 
+</span><span>        data_type: TYPE_INT64
+</span><span>        dims: [ 512 ]
+</span><span>        input_data_file: &quot;256/raw_attention_mask&quot;
+</span><span>      } 
+</span><span>    } 
+</span><span>    inputs: { 
+</span><span>      key: &quot;input_ids&quot; 
+</span><span>      value: { 
+</span><span>        data_type: TYPE_INT64
+</span><span>        dims: [ 512 ] 
+</span><span>        input_data_file: &quot;256/raw_input_ids&quot; 
+</span><span>      } 
+</span><span>    } 
+</span><span>  }
+</span><span>]  
+</span></code></pre>
+<h2 id="benchmarking"><a class="zola-anchor" href="#benchmarking" aria-label="Anchor link for: benchmarking">Benchmarking</a></h2>
+<p>There are many tools available for load testing, with some of the most well-known being the
+<a href="https://httpd.apache.org/docs/2.4/programs/ab.html">Apache HTTP benchmarking tool (ab)</a>,
+<a href="https://jmeter.apache.org/">JMeter</a>, and <a href="https://locust.io/">Locust</a>.</p>
+<p>Yet, Triton has its own benchmarking tool named 
+<a href="https://docs.nvidia.com/deeplearning/triton-inference-server/archives/triton-inference-server-2280/user-guide/docs/user_guide/perf_analyzer.html">perf_analyzer</a>.
+It measures latency and throughput sending requests to the server. It's optimized for Triton and gives the closest results you can get 
+to performance while using official clients. Besides other features, perf_analyzer allows collecting GPU utilization metrics which
+are crucial to model inference. </p>
+<p>For this particular comparison it was run using virtual machine with the following configuration: 
+AMD EPYC with Nvidia Ampere A100, 1GPU, 28vCPU, 119Gb RAM. Performance analyzer was run with 1 concurrent request without dynamic batching enabled.</p>
+<table><thead><tr><th>Triton Backend Type</th><th>Throughput, infer/sec</th><th>Avg Latency, ms</th><th>Latency p50, ms</th><th>Latency p90, ms</th><th>Latency p99, ms</th></tr></thead><tbody>
+<tr><td>Python + Transformers</td><td>4.9</td><td>202.9</td><td>154.9</td><td>385.7</td><td>405.7</td></tr>
+<tr><td>ONNX</td><td>137.3</td><td>7.27</td><td>7.13</td><td>8.75</td><td>9.09</td></tr>
+<tr><td>ONNX + TensorRT</td><td>150.2</td><td>6.65</td><td>6.96</td><td>7.34</td><td>7.68</td></tr>
+</tbody></table>
+<p>The drastic difference can be seen between Python and ONNX backends with ONNX having almost 28x throughput and having 28x less avg latency. 
+The difference between ONNX and ONNX with TensorRT acceleration enabled is more subtle. TensorRT gives ~10% of improvement in throughput and avg latency being ~10% lower.</p>
+<h2 id="what-s-next"><a class="zola-anchor" href="#what-s-next" aria-label="Anchor link for: what-s-next">What's next?</a></h2>
+<p>This post, of course, cannot cover every aspect of deploying a model with Triton Inference Server.
+However, I’d like to suggest some steps you can take if the results don’t meet your expectations
+or if you need improved performance.</p>
+<h3 id="enhancing-performance"><a class="zola-anchor" href="#enhancing-performance" aria-label="Anchor link for: enhancing-performance">Enhancing Performance</a></h3>
+<p>First, to boost performance, consider using the <code>instance_groups</code> section of the model configuration
+to launch multiple instances of your model.
+More details on this can be found <a href="https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/model_configuration.html#instance-groups">here</a>.
+While this approach may enhance performance for some models, it could have the opposite effect for others,
+so it's advisable to experiment with your model to find the optimal configuration.</p>
+<p>Be aware that compatibility issues may arise between certain versions of the CUDA driver and ONNX Runtime.
+These issues can lead to failures when starting the model with <code>instance_groups[].count</code> set to more than one,
+particularly when TensorRT acceleration is enabled.</p>
+<h3 id="model-quantization"><a class="zola-anchor" href="#model-quantization" aria-label="Anchor link for: model-quantization">Model Quantization</a></h3>
+<p>Another effective strategy is to quantize your model to int8, int4, or even a two-bit format.
+For int8 quantization, <a href="https://github.com/microsoft/Olive">Olive</a> is a recommended tool for optimizing ONNX models
+for specific hardware.</p>
+<p>Alternatively, you can use TensorRT just-in-time conversion and utilize Triton for inference
+through the <a href="https://github.com/triton-inference-server/tensorrt_backend">Triton TensorRT backend</a>.</p>
+<h3 id="tuning-triton-parameters"><a class="zola-anchor" href="#tuning-triton-parameters" aria-label="Anchor link for: tuning-triton-parameters">Tuning Triton Parameters</a></h3>
+<p>To fine-tune Triton parameters for inference, you can use the <a href="https://github.com/triton-inference-server/model_analyzer">model_analyzer</a>.
+This tool allows you to do an optimization process of configuration parameters via different algorithms such as bayesian optimization.</p>
+<p><a href="https://github.com/NVIDIA/TensorRT/tree/main/tools/Polygraphy">Polygraphy</a> is another valuable tool
+for analyzing model behavior, especially if your model performs differently on TensorRT.
+It enables you to compare the inputs and outputs of an ONNX model against the corresponding TensorRT model, layer by layer.</p>
+<h3 id="custom-triton-backend"><a class="zola-anchor" href="#custom-triton-backend" aria-label="Anchor link for: custom-triton-backend">Custom Triton Backend</a></h3>
+<p>If you've optimized your model as much as possible and still need better performance, consider speeding up preprocessing by developing a custom backend, perhaps in Rust.
+This approach can provide a performance boost since the underlying implementation of transformer tokenizers is in Rust.
+When executing in Python, there is some overhead associated with transferring data between the Python interpreter and Rust. </p>
+<p>You can also enhance post-processing through batching and offloading calculations to a GPU or by rewriting the code in Rust.
+You can find high-level requirements for implementing a custom Triton backend <a href="https://docs.nvidia.com/deeplearning/triton-inference-server/archives/triton_inference_server_220/user-guide/docs/backend.html#backend-shared-library">here</a>.</p>
+<h2 id="bonus-production-considerations"><a class="zola-anchor" href="#bonus-production-considerations" aria-label="Anchor link for: bonus-production-considerations">Bonus: production considerations</a></h2>
+<p>In a real production environment, reliability and observability are crucial.
+This includes effective monitoring and scalability.
+To monitor machine learning models, OpenTelemetry, an open-source framework for collecting,
+exporting, and generating metrics, logs, and traces, can be used.
+Triton <a href="https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/trace.html">supports</a>
+OpenTelemetry, enabling the generation of traces for inference requests.</p>
+<p>Most companies rely on Prometheus as a metrics database,
+along with Grafana for visual dashboards and alerts.
+Triton also <a href="https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/metrics.html">supports</a>
+Prometheus metrics, including GPU performance data and request statistics, making it easier to monitor and optimize models in production.</p>
+<p>Scalability is another key concern in production environments.
+Tools like <a href="https://github.com/SeldonIO/seldon-core">Seldon-Core</a> are designed to address this challenge.
+Seldon-Core facilitates the deployment of machine learning models on Kubernetes,
+introducing the concept of a &quot;server&quot; that acts as the backend for a model.
+It supports popular frameworks like scikit-learn, XGBoost, and Triton.
+With Seldon, you can run Triton instances while benefiting from built-in features such as automatic scaling,
+A/B testing, Canary deployments, and more.</p>
+<p>You might also explore KServe,
+which offers the helpful feature of scaling deployments down to zero when there is no incoming traffic.</p>
+<h2 id="resources"><a class="zola-anchor" href="#resources" aria-label="Anchor link for: resources">Resources</a></h2>
+<ul>
+<li><a href="https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/index.html">Triton Inference Server</a></li>
+<li><a href="https://github.com/triton-inference-server/onnxruntime_backend">Triton Backend for the ONNX Runtime</a></li>
+<li><a href="https://github.com/triton-inference-server/tensorrt_backend">Triton Backend for TensorRT</a></li>
+<li><a href="https://huggingface.co/docs/optimum/en/index">Optimum: Transformers Extension</a></li>
+<li><a href="https://github.com/NVIDIA/TensorRT/tree/main/tools/Polygraphy">Polygraphy: A Deep Learning Inference Prototyping and Debugging Toolkit</a></li>
+<li><a href="https://github.com/microsoft/Olive">Olive: Hardware-aware Model Optimization Tool</a></li>
+<li><a href="https://github.com/SeldonIO/seldon-core">Seldon Core: Tool to deploy ML Models with Kubernetes at Scale.</a></li>
+</ul>
+
+        </section>
+    </article>
+</main>
+
+
+
+        
+        <div class="giscus"></div>
+        <script src="https://giscus.app/client.js"
+        data-repo="rproskuryakov/rproskuryakov.github.io"
+        data-repo-id="R_kgDOMhJbhQ"
+        data-category="Announcements"
+        data-category-id="DIC_kwDOMhJbhc4CjbIh"
+        data-mapping="url"
+        data-strict="0"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="light_tritanopia"
+        data-lang="en"
+        crossorigin="anonymous"
+        async>
+</script>
+        
+
+    </div>
+</body>
+
+</html>
