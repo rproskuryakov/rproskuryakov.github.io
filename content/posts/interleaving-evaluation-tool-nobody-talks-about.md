@@ -48,28 +48,31 @@ small-impact changes to pack them up into A/B-test in Netflix and DoorDash.
 
 ## Introduction
 
-A/B-testing has become a widely adopted tool for online evaluation of machine learning models
-across the industry in the past 15 years. Despite its advantages, there are still lots of issues to tackle.
-The main culprit of any A/B-test is variance. Multiple efforts has been made throughout recent years to mitigate the problem.
-For instance, the methods such as [CUPED](source link) were developed. 
+A/B-testing has become a widely adopted tool for online evaluation of machine learning models across the industry in the past 15 years. 
+Despite its advantages, there are still lots of issues to tackle. 
+The main culprit of any A/B-test is variance. 
+Multiple efforts has been made throughout recent years to mitigate the problem. 
+For instance, the methods such as [CUPED](source link) were developed.
 
 Lets look at the variance sources in testing a search engine.
 
-[Beyond A/B Testing: Part 2 – When A/B Tests Struggle with Ranking & Recommendations](https://bananimohapatra.substack.com/p/beyond-ab-testing-part-2-when-ab?utm_source=substack&utm_medium=email&utm_content=share)
+non-engaged users / non-competitive pairs (too similar ranker outputs)
+
+difference in users and difficulties of experiment engines in achieving true randomization
 
 What randomization unit?
 
 First one: different users bring different contribution. Cola Example
 
-Second one: different queries different algorithms. Too much uncertainty because of search queries nature. 
+Second one: different queries different algorithms. Too much uncertainty because of search queries nature.
 
-Cola Example
 
-There is another method to reduce variance in such cases almost nobody talks about, interleaving. 
-Originally, it was developed to test search engines, but it can be applied to any online tests of ranking models.
+Beyond A/B Testing: Part 2 – When A/B Tests Struggle with Ranking & Recommendations
 
-The idea behind interleaving was introduced by Thorsten Joachims in 2002. 
 
+There is another method to reduce variance in such cases almost nobody talks about, interleaving. Originally, it was developed to test search engines, but it can be applied to any online tests of ranking models.
+
+The idea behind interleaving was introduced by Thorsten Joachims in 2002.
 He introduced a method of combining two ranker results and proved that $R_a$ and $R_b$ 
 being the relevance of rankers A and B correspondingly can be evaluated
 by estimation of expectation $E(\frac{C_a - C_b}{C})$.
@@ -116,7 +119,7 @@ of the relevance of the links.
 
 Thus, balanced interleaving has emerged as a first iteration of the method.
 
-Latter contributors to the topic introduced the following metric:
+Latter contributors to the topic introduced the following metric (credit attribution):
 
 $$ \Delta_{AB} = \frac{W_A + \frac{1}{2}T_{AB}}{W_A + W_B + T_{AB}} - 0.5$$
 
@@ -245,6 +248,15 @@ https://research.yandex.com/tutorials/online-evaluation/sigir-2019
 
 
 ## Industrial Applications
+
+Interleaving is applied in multiple big tech companies. 
+For example, Netflix and Doordash conduct series of interleaving experiments to test small-impact hypothesis,
+such as change in query embedding algorithm. Then all positive changes are sent to A/B-test together to estimate business metric impact.
+
+
+Thumbtack
+
+https://medium.com/thumbtack-engineering/accelerating-ranking-experimentation-at-thumbtack-with-interleaving-20cbe7837edf
 
 Meta 
 
