@@ -2,7 +2,7 @@
 title = "Interleaving, a Retrieval Online Evaluation Method Nobody Talks About. Part 1"
 date = "2026-09-29"
 draft = false
-description = "A/B-testing has become the main tool for almost any machine learning model online evaluation method. But there is another tool for search ranking and recommender systems in particular, interleaving. Somehow it is not mentioned enough despite its big advantages over A/B-testing in multiple cases. This series aims to close the gap. The first part explains why A/B-tests struggle with ranking models and introduces balanced interleaving."
+description = "Why A/B-tests struggle to evaluate ranking models, and how interleaving, starting with balanced interleaving, detects the better ranker with far less traffic."
 [taxonomies]
 tags=["search", "A/B-testing", "experimenting", "interleaving"]
 [extra]
