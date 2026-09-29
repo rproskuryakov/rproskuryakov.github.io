@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<html class="dark light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google-site-verification" content="PT7RzaL9N2wESQb6k9dsgCSqTgmfPYb3nb7vze25j4o" />
+
+    
+
+    
+    
+    
+    <title>
+         Interleaving, a Retrieval Online Evaluation Method Nobody Talks About. Part 1
+        
+    </title>
+
+        
+            <meta property="og:title" content="Interleaving, a Retrieval Online Evaluation Method Nobody Talks About. Part 1" />
+        
+     
+
+     
+         
+             <meta property="og:description" content="Why A&#x2F;B-tests struggle to evaluate ranking models, and how interleaving, starting with balanced interleaving, detects the better ranker with far less traffic." />
+         
+     
+
+     
+         
+             <meta name="description" content="Why A&#x2F;B-tests struggle to evaluate ranking models, and how interleaving, starting with balanced interleaving, detects the better ranker with far less traffic." />
+         
+    
+
+    
+    
+        <link rel="icon" type="image/x-icon" href="https://rproskuryakov.github.io/favicon.ico">
+        <link rel="apple-touch-icon" sizes="180x180" href="https://rproskuryakov.github.io/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="https://rproskuryakov.github.io/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="https://rproskuryakov.github.io/favicon-16x16.png">
+        <link rel="manifest" href="/site.webmanifest">
+    
+
+    
+    
+        <link href=https://rproskuryakov.github.io/fonts.css rel="stylesheet" />
+    
+
+    
+    
+
+    
+    
+        <script src=https://rproskuryakov.github.io/js/codeblock.js></script>
+    
+
+    
+    
+        <script src=https://rproskuryakov.github.io/js/toc.js></script>
+    
+
+    
+    
+        <script src=https://rproskuryakov.github.io/js/note.js></script>
+    
+
+    
+        
+            <script>
+            MathJax = {
+              tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+              }
+            };
+            </script>
+        
+        <script type="text/javascript" id="MathJax-script" async
+          src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+        </script>
+    
+
+    
+    
+        <script type="module">
+            import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+            mermaid.initialize({ startOnLoad: true, theme: "neutral" });
+        </script>
+        <style>
+            /* The theme caps every svg at 15px (meant for icons) */
+            pre.mermaid { text-align: center; }
+            pre.mermaid svg { max-height: none; }
+        </style>
+    
+
+    
+    <link rel="alternate" type="application/atom+xml" title="Rodion Proskuriakov" href="https://rproskuryakov.github.io/atom.xml">
+
+
+    
+    
+        <link rel="stylesheet" type="text/css" href=https://rproskuryakov.github.io/theme/light.css />
+    
+
+    <!-- Set the correct theme in the script -->
+    <script src=https://rproskuryakov.github.io/js/themetoggle.js></script>
+    
+        <script>setTheme("light");</script>
+    
+
+    <link rel="stylesheet" type="text/css" media="screen" href=https://rproskuryakov.github.io/main.css />
+
+    
+</head>
+
+
+<body>
+    <div class="content">
+        <header>
+    <div class="main">
+        <a href=https:&#x2F;&#x2F;rproskuryakov.github.io>Rodion Proskuriakov</a>
+
+        <div class="socials">
+            
+            <a rel="me" href="https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;r-proskuriakov" class="social">
+                <img alt=linkedin src=https://rproskuryakov.github.io/social_icons/linkedin.svg>
+            </a>
+            
+            <a rel="me" href="https:&#x2F;&#x2F;github.com&#x2F;rproskuryakov" class="social">
+                <img alt=github src=https://rproskuryakov.github.io/social_icons/github.svg>
+            </a>
+            
+        </div>
+    </div>
+
+    <nav>
+        
+        <a href=https://rproskuryakov.github.io/posts style="margin-left: 0.5em">&#x2F;posts</a>
+        
+        <a href=https://rproskuryakov.github.io/about style="margin-left: 0.5em">&#x2F;about</a>
+        
+        <a href=https://rproskuryakov.github.io/tags style="margin-left: 0.5em">&#x2F;tags</a>
+        
+
+        
+    </nav>
+</header>
+
+
+        
+        
+    
+<main>
+    <article>
+        <div class="title">
+            
+            
+    <div class="page-header">
+        Interleaving, a Retrieval Online Evaluation Method Nobody Talks About. Part 1<span class="primary-color" style="font-size: 1.6em">.</span>
+    </div>
+
+
+                <div class="meta">
+                    
+                        Posted on <time>2026-09-29</time>
+                    
+
+                    
+
+                    
+
+                    
+                    
+                            <span class="tags-label"> :: Tags:</span>
+                            <span class="tags">
+                                    <a href="https://rproskuryakov.github.io/tags/search/" class="post-tag">search</a>, 
+                                
+                                    <a href="https://rproskuryakov.github.io/tags/a-b-testing/" class="post-tag">A&#x2F;B-testing</a>, 
+                                
+                                    <a href="https://rproskuryakov.github.io/tags/experimenting/" class="post-tag">experimenting</a>, 
+                                
+                                    <a href="https://rproskuryakov.github.io/tags/interleaving/" class="post-tag">interleaving</a>
+                                
+                            </span>
+                    
+
+                    
+                    
+
+                    
+
+                </div>
+        </div>
+
+        
+
+        
+        
+        
+            <div class="toc-container">
+                <h1 class="toc-title">Table of Contents</h1>
+                <ul class="toc-list">
+                    
+                        <li>
+                            <a href="https://rproskuryakov.github.io/posts/interleaving-evaluation-tool-nobody-talks-about/#introduction">Introduction</a>
+                            
+                        </li>
+                    
+                        <li>
+                            <a href="https://rproskuryakov.github.io/posts/interleaving-evaluation-tool-nobody-talks-about/#who-is-it-for">Who is it for?</a>
+                            
+                        </li>
+                    
+                        <li>
+                            <a href="https://rproskuryakov.github.io/posts/interleaving-evaluation-tool-nobody-talks-about/#overview">Overview</a>
+                            
+                        </li>
+                    
+                        <li>
+                            <a href="https://rproskuryakov.github.io/posts/interleaving-evaluation-tool-nobody-talks-about/#why-a-b-tests-struggle-with-ranking">Why A&#x2F;B-tests struggle with ranking</a>
+                            
+                                <ul>
+                                    
+                                        <li>
+                                            <a href="https://rproskuryakov.github.io/posts/interleaving-evaluation-tool-nobody-talks-about/#users-are-different">Users are different</a>
+                                        </li>
+
+                                        
+                                    
+                                        <li>
+                                            <a href="https://rproskuryakov.github.io/posts/interleaving-evaluation-tool-nobody-talks-about/#queries-are-different">Queries are different</a>
+                                        </li>
+
+                                        
+                                    
+                                        <li>
+                                            <a href="https://rproskuryakov.github.io/posts/interleaving-evaluation-tool-nobody-talks-about/#randomization-unit">Randomization unit</a>
+                                        </li>
+
+                                        
+                                    
+                                </ul>
+                            
+                        </li>
+                    
+                        <li>
+                            <a href="https://rproskuryakov.github.io/posts/interleaving-evaluation-tool-nobody-talks-about/#the-idea-of-interleaving">The idea of interleaving</a>
+                            
+                        </li>
+                    
+                        <li>
+                            <a href="https://rproskuryakov.github.io/posts/interleaving-evaluation-tool-nobody-talks-about/#balanced-interleaving">Balanced interleaving</a>
+                            
+                                <ul>
+                                    
+                                        <li>
+                                            <a href="https://rproskuryakov.github.io/posts/interleaving-evaluation-tool-nobody-talks-about/#interleaving-policy">Interleaving policy</a>
+                                        </li>
+
+                                        
+                                    
+                                        <li>
+                                            <a href="https://rproskuryakov.github.io/posts/interleaving-evaluation-tool-nobody-talks-about/#credit-attribution">Credit attribution</a>
+                                        </li>
+
+                                        
+                                    
+                                        <li>
+                                            <a href="https://rproskuryakov.github.io/posts/interleaving-evaluation-tool-nobody-talks-about/#statistics">Statistics</a>
+                                        </li>
+
+                                        
+                                    
+                                </ul>
+                            
+                        </li>
+                    
+                        <li>
+                            <a href="https://rproskuryakov.github.io/posts/interleaving-evaluation-tool-nobody-talks-about/#general-framework">General framework</a>
+                            
+                        </li>
+                    
+                        <li>
+                            <a href="https://rproskuryakov.github.io/posts/interleaving-evaluation-tool-nobody-talks-about/#the-bias-of-balanced-interleaving">The bias of balanced interleaving</a>
+                            
+                        </li>
+                    
+                        <li>
+                            <a href="https://rproskuryakov.github.io/posts/interleaving-evaluation-tool-nobody-talks-about/#what-s-next">What&#x27;s next?</a>
+                            
+                        </li>
+                    
+                        <li>
+                            <a href="https://rproskuryakov.github.io/posts/interleaving-evaluation-tool-nobody-talks-about/#resources">Resources</a>
+                            
+                        </li>
+                    
+                </ul>
+            </div>
+        
+        
+
+        <section class="body">
+            <h2 id="introduction"><a class="zola-anchor" href="#introduction" aria-label="Anchor link for: introduction">Introduction</a></h2>
+<p>A/B-testing has become a widely adopted tool for online evaluation of machine learning models across the industry in the past 15 years.
+Despite its advantages, there are still lots of issues to tackle.
+The main culprit of any A/B-test is variance.
+Multiple efforts have been made throughout recent years to mitigate the problem.
+For instance, methods such as <a href="https://exp-platform.com/Documents/2013-02-CUPED-ImprovingSensitivityOfControlledExperiments.pdf">CUPED</a> were developed
+to reduce variance by using pre-experiment data as a covariate.</p>
+<p>Yet, when you work on search or recommendations, even a well-tuned A/B-test often needs weeks of traffic
+to detect a change in ranking quality.
+If your team produces several ranking hypotheses a week, the experimentation platform quickly becomes the bottleneck.</p>
+<p>There is another method to reduce variance in such cases that almost nobody talks about: interleaving.
+Originally, it was developed to test web search engines, but it can be applied to online tests of any ranking model.
+Companies such as Netflix, Airbnb, DoorDash and Amazon report that it detects the winning ranker
+with one or two orders of magnitude less traffic than a classic A/B-test.</p>
+<h2 id="who-is-it-for"><a class="zola-anchor" href="#who-is-it-for" aria-label="Anchor link for: who-is-it-for">Who is it for?</a></h2>
+<p>This post is for ML engineers, search engineers and data scientists who run online experiments
+on search ranking or recommender systems and want to iterate faster.
+I assume you are familiar with the basics of A/B-testing and hypothesis testing.
+No prior knowledge of interleaving is required.</p>
+<h2 id="overview"><a class="zola-anchor" href="#overview" aria-label="Anchor link for: overview">Overview</a></h2>
+<p>This is the first post of a series on interleaving.
+In this part, I will walk you through:</p>
+<ul>
+<li>why A/B-tests struggle with ranking models;</li>
+<li>the idea behind interleaving and the first method, balanced interleaving;</li>
+<li>the general framework every interleaving method fits into: interleaving policy and credit attribution;</li>
+<li>the bias that makes balanced interleaving unreliable.</li>
+</ul>
+<p>In the second part, coming soon, we will look at Team-Draft interleaving,
+the limitations of interleaving and how the industry uses it.
+So, let's get started!</p>
+<h2 id="why-a-b-tests-struggle-with-ranking"><a class="zola-anchor" href="#why-a-b-tests-struggle-with-ranking" aria-label="Anchor link for: why-a-b-tests-struggle-with-ranking">Why A/B-tests struggle with ranking</a></h2>
+<p>Let's look at the sources of variance in testing a search engine.</p>
+<h3 id="users-are-different"><a class="zola-anchor" href="#users-are-different" aria-label="Anchor link for: users-are-different">Users are different</a></h3>
+<p>In a classic A/B-test, the population is split into two groups: one is served by ranker A, the other by ranker B.
+The problem is that users contribute very differently to the metric.
+A heavy user who makes fifty searches a day and a casual user who searches once a week land in the groups randomly,
+and the difference in their behaviour is often much larger than the difference between the rankers.</p>
+<p>Think of a cola taste test.
+You could give brand A to one group of people and brand B to another group and compare how much they liked it.
+Or you could give both glasses to the same person and ask which one tastes better.
+The second design removes the difference between people from the comparison entirely,
+and you need far fewer participants to get a confident answer.</p>
+<h3 id="queries-are-different"><a class="zola-anchor" href="#queries-are-different" aria-label="Anchor link for: queries-are-different">Queries are different</a></h3>
+<p>The same applies to queries.
+Some queries are navigational and both rankers return the same obvious result at the first position.
+Others are ambiguous and no ranker performs well on them.
+Only a fraction of queries are <em>competitive</em>, meaning that the rankers produce meaningfully different results.
+In an A/B-test, the non-competitive queries still contribute noise to the metric, but no signal.</p>
+<h3 id="randomization-unit"><a class="zola-anchor" href="#randomization-unit" aria-label="Anchor link for: randomization-unit">Randomization unit</a></h3>
+<p>Finally, one should choose a randomization unit: user, session or query.
+Randomizing by user is the most common choice as it keeps the experience consistent,
+but it maximizes the between-user variance described above.
+Randomizing by query reduces variance, but breaks the user experience and makes long-term metrics impossible to measure.</p>
+<p>Interleaving takes the "same person tastes both glasses" approach.
+Every user sees a single result list that combines the outputs of both rankers,
+and the user's own clicks tell us which ranker they prefer.</p>
+<pre class="mermaid">flowchart LR
+    subgraph AB["A/B-test"]
+        direction TB
+        U1["Users"] --> S{"Random split"}
+        S -->|50%| RA["Ranker A"]
+        S -->|50%| RB["Ranker B"]
+        RA --> MA["Metric of group A"]
+        RB --> MB["Metric of group B"]
+    end
+    subgraph IL["Interleaving"]
+        direction TB
+        U2["Users"] --> Q["Query"]
+        Q --> A2["Ranker A"]
+        Q --> B2["Ranker B"]
+        A2 --> M["Interleaved list"]
+        B2 --> M
+        M --> C["Clicks credited to A or B"]
+    end</pre>
+<h2 id="the-idea-of-interleaving"><a class="zola-anchor" href="#the-idea-of-interleaving" aria-label="Anchor link for: the-idea-of-interleaving">The idea of interleaving</a></h2>
+<p>The idea behind interleaving was introduced by Thorsten Joachims in 2002 in
+<a href="https://www.cs.cornell.edu/~tj/publications/joachims_02b.pdf">Evaluating Retrieval Performance using Clickthrough Data</a>.</p>
+<p>Absolute click metrics are hard to interpret: users click on what they see first,
+and the click-through rate depends heavily on the query.
+Joachims proposed to ask a <em>relative</em> question instead: given a combined list of results from both rankers,
+does the user click more on results from A or from B?</p>
+<p>Let $C_a$ and $C_b$ be the number of clicks on results coming from rankers A and B for a query,
+and $C$ the total number of clicks.
+Joachims showed that under reasonable assumptions the relevance of the rankers can be compared by estimating
+$E\left(\frac{C_a - C_b}{C}\right)$.
+If this value is significantly bigger than zero, ranker A produces more relevant results than ranker B.</p>
+<p>The method relies on two assumptions:</p>
+<ul>
+<li>users click on relevant results more often than on non-relevant ones;</li>
+<li>users do not click more frequently on results of one ranker independently of their relevance.
+In other words, the combined list must be <em>blind</em>: the user cannot tell which ranker produced which result.</li>
+</ul>
+<p>The experiments in the paper support both assumptions,
+and the outcome of interleaving agrees with manual relevance judgements.</p>
+<p>There is also a nice side effect.
+In an A/B-test, half of the users are fully exposed to the treatment, even if the new model turns out to be terrible.
+With interleaving, a bad ranker contributes only part of each result list, so the damage to user experience is limited.</p>
+<h2 id="balanced-interleaving"><a class="zola-anchor" href="#balanced-interleaving" aria-label="Anchor link for: balanced-interleaving">Balanced interleaving</a></h2>
+<p>The first interleaving method is called balanced interleaving.</p>
+<h3 id="interleaving-policy"><a class="zola-anchor" href="#interleaving-policy" aria-label="Anchor link for: interleaving-policy">Interleaving policy</a></h3>
+<p>Formally, let $A = (a_1, a_2, ..., a_n)$ and $B = (b_1, b_2, ..., b_n)$ be the outputs of two ranking models.
+Let $I = (i_1, i_2, ..., i_n)$ be the combined ranking.</p>
+<p>Balanced interleaving flips a coin once per query to decide which ranker goes first.
+Then it takes results from A and B alternately, skipping the ones already present in $I$.
+The resulting list has a nice property: for any cut-off $k$, the top-$k$ of $I$ contains the top-$k_a$ results of A
+and the top-$k_b$ results of B, where $k_a$ and $k_b$ differ by at most one.</p>
+<pre data-lang="python" style="background-color:#2e3440;color:#d8dee9;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#81a1c1;">import </span><span>random
+</span><span>
+</span><span>
+</span><span style="color:#81a1c1;">def </span><span style="color:#88c0d0;">balanced_interleave</span><span>(a</span><span style="color:#eceff4;">: </span><span style="color:#81a1c1;">list</span><span style="color:#eceff4;">, </span><span>b</span><span style="color:#eceff4;">: </span><span style="color:#81a1c1;">list</span><span style="color:#eceff4;">, </span><span>length</span><span style="color:#eceff4;">: </span><span style="color:#81a1c1;">int</span><span>) </span><span style="color:#eceff4;">-&gt; </span><span style="color:#81a1c1;">list</span><span>:
+</span><span>    a_first </span><span style="color:#81a1c1;">= </span><span>random</span><span style="color:#81a1c1;">.</span><span style="color:#88c0d0;">random</span><span>() </span><span style="color:#81a1c1;">&lt; </span><span style="color:#b48ead;">0</span><span style="color:#eceff4;">.</span><span style="color:#b48ead;">5
+</span><span>    result </span><span style="color:#81a1c1;">= </span><span>[]
+</span><span>    ka, kb </span><span style="color:#81a1c1;">= </span><span style="color:#b48ead;">0</span><span>, </span><span style="color:#b48ead;">0
+</span><span>    </span><span style="color:#81a1c1;">while </span><span>(ka </span><span style="color:#81a1c1;">&lt; </span><span style="font-style:italic;color:#88c0d0;">len</span><span>(a) </span><span style="color:#81a1c1;">or </span><span>kb </span><span style="color:#81a1c1;">&lt; </span><span style="font-style:italic;color:#88c0d0;">len</span><span>(b)) </span><span style="color:#81a1c1;">and </span><span style="font-style:italic;color:#88c0d0;">len</span><span>(result) </span><span style="color:#81a1c1;">&lt; </span><span>length:
+</span><span>        a_turn </span><span style="color:#81a1c1;">= </span><span>ka </span><span style="color:#81a1c1;">&lt; </span><span>kb </span><span style="color:#81a1c1;">or </span><span>(ka </span><span style="color:#81a1c1;">== </span><span>kb </span><span style="color:#81a1c1;">and </span><span>a_first)
+</span><span>        </span><span style="color:#81a1c1;">if </span><span>kb </span><span style="color:#81a1c1;">&gt;= </span><span style="font-style:italic;color:#88c0d0;">len</span><span>(b) </span><span style="color:#81a1c1;">or </span><span>(ka </span><span style="color:#81a1c1;">&lt; </span><span style="font-style:italic;color:#88c0d0;">len</span><span>(a) </span><span style="color:#81a1c1;">and </span><span>a_turn):
+</span><span>            </span><span style="color:#81a1c1;">if </span><span>a[ka] </span><span style="color:#81a1c1;">not in </span><span>result:
+</span><span>                result</span><span style="color:#81a1c1;">.</span><span style="color:#88c0d0;">append</span><span>(a[ka])
+</span><span>            ka </span><span style="color:#81a1c1;">+= </span><span style="color:#b48ead;">1
+</span><span>        </span><span style="color:#81a1c1;">else</span><span>:
+</span><span>            </span><span style="color:#81a1c1;">if </span><span>b[kb] </span><span style="color:#81a1c1;">not in </span><span>result:
+</span><span>                result</span><span style="color:#81a1c1;">.</span><span style="color:#88c0d0;">append</span><span>(b[kb])
+</span><span>            kb </span><span style="color:#81a1c1;">+= </span><span style="color:#b48ead;">1
+</span><span>    </span><span style="color:#81a1c1;">return </span><span>result
+</span></code></pre>
+<p>For example, let A = (a, b, c) and B = (b, d, a).
+Depending on the coin, the user sees one of two lists:</p>
+<pre class="mermaid">flowchart TD
+    Q["Query"] --> Coin{"Coin flip"}
+    Coin -->|"A first"| L1["1. a from A<br/>2. b from B<br/>3. d from B<br/>4. c from A"]
+    Coin -->|"B first"| L2["1. b from B<br/>2. a from A<br/>3. d from B<br/>4. c from A"]</pre>
+<p>Note that b, which is ranked highly by both models, appears only once, and the ranker that would add it second simply skips it.</p>
+<h3 id="credit-attribution"><a class="zola-anchor" href="#credit-attribution" aria-label="Anchor link for: credit-attribution">Credit attribution</a></h3>
+<p>Let $c_1, c_2, ..., c_m$ be the ranks of the clicked results in $I$ and $c_{max}$ the largest of them, i.e. the lowest clicked position.
+Joachims proposes to look only at the part of both rankings the user has actually examined.
+Let</p>
+<p>$$k = \min \lbrace j : i_{c_{max}} = a_j \lor i_{c_{max}} = b_j \rbrace$$</p>
+<p>Then the clicks attributed to A are the clicked results that appear among the top-$k$ results of A, $h_a$,
+and the same for B, $h_b$.
+If $h_a &gt; h_b$, ranker A wins the query; if $h_a &lt; h_b$, B wins; otherwise it is a tie.</p>
+<h3 id="statistics"><a class="zola-anchor" href="#statistics" aria-label="Anchor link for: statistics">Statistics</a></h3>
+<p>Having collected the outcomes, we need to decide whether one ranker is significantly better.</p>
+<p>Joachims suggests a two-tailed paired t-test on per-query samples $h_a/c$ and $h_b/c$.
+In practice, collecting samples that hold the assumptions of the t-test can be challenging.
+In such cases, the author proposes an alternative approach, the binomial sign test,
+which only looks at the number of queries won by each ranker.</p>
+<p>Later works aggregate the outcomes into a single preference score.
+Let $W_A$ and $W_B$ be the number of queries won by A and B correspondingly, and $T_{AB}$ the number of ties:</p>
+<p>$$ \Delta_{AB} = \frac{W_A + \frac{1}{2}T_{AB}}{W_A + W_B + T_{AB}} - 0.5$$</p>
+<p>A positive value of $\Delta_{AB}$ indicates that A is better than B, a negative value indicates that B is better.
+Queries without clicks carry no information and are excluded.</p>
+<p>To get a confidence interval of $\Delta_{AB}$, the bootstrap is commonly used.
+Subsamples are formed by drawing queries, sessions or users with replacement, $\Delta_{AB}$ is computed for each subsample,
+and the percentile method gives the interval.
+Resampling by user rather than by query accounts for the fact that queries of the same user are correlated.</p>
+<h2 id="general-framework"><a class="zola-anchor" href="#general-framework" aria-label="Anchor link for: general-framework">General framework</a></h2>
+<p>Balanced interleaving highlights two design decisions every interleaving method has to make:</p>
+<ul>
+<li><strong>interleaving policy</strong>: how the combined list is constructed from the compared rankings;</li>
+<li><strong>credit attribution</strong>: how user actions are attributed back to the compared rankers.</li>
+</ul>
+<pre class="mermaid">sequenceDiagram
+    actor User
+    participant I as Interleaver
+    participant A as Ranker A
+    participant B as Ranker B
+    participant L as Experiment log
+    User->>I: query
+    I->>A: query
+    I->>B: query
+    A-->>I: ranking A
+    B-->>I: ranking B
+    Note over I: interleaving policy
+    I-->>User: combined list
+    I->>L: list with the origin of every result
+    User->>L: clicks
+    Note over L: credit attribution
+    Note over L: aggregation and significance test</pre>
+<p>Several evaluation criteria for a good interleaving method have been proposed in the literature,
+for example in <a href="https://staff.fnwi.uva.nl/m.derijke/wp-content/papercite-data/pdf/hofmann-fidelity-2013.pdf">Fidelity, Soundness, and Efficiency of Interleaved Comparison Methods</a>:</p>
+<ul>
+<li><strong>fidelity</strong>: the method declares the correct winner, in particular it does not prefer any ranker when clicks are random;</li>
+<li><strong>sensitivity</strong> (or efficiency): the method needs as few observations as possible to reach a confident conclusion;</li>
+<li><strong>user experience</strong>: the combined list is not worse than the lists being compared.</li>
+</ul>
+<p>Each method has its own advantages and limitations with respect to these criteria.</p>
+<h2 id="the-bias-of-balanced-interleaving"><a class="zola-anchor" href="#the-bias-of-balanced-interleaving" aria-label="Anchor link for: the-bias-of-balanced-interleaving">The bias of balanced interleaving</a></h2>
+<p>Balanced interleaving turns out to be biased
+when the compared rankings are similar but shifted by a position or so,
+as shown in <a href="https://www.cs.cornell.edu/people/tj/publications/chapelle_etal_12a.pdf">Large-Scale Validation and Analysis of Interleaved Search Evaluation</a>.</p>
+<p>Let A = (a, b, c) and B = (b, c, a).
+Depending on the coin, the combined list is either (a, b, c) or (b, a, c).
+Now, assume a user who does not care about relevance at all and clicks on a single random result.</p>
+<table><thead><tr><th>Combined list</th><th>Clicked result</th><th>$k$</th><th>Winner</th></tr></thead><tbody>
+<tr><td>(a, b, c)</td><td>a</td><td>1</td><td>A</td></tr>
+<tr><td>(a, b, c)</td><td>b</td><td>1</td><td>B</td></tr>
+<tr><td>(a, b, c)</td><td>c</td><td>2</td><td>B</td></tr>
+<tr><td>(b, a, c)</td><td>b</td><td>1</td><td>B</td></tr>
+<tr><td>(b, a, c)</td><td>a</td><td>1</td><td>A</td></tr>
+<tr><td>(b, a, c)</td><td>c</td><td>2</td><td>B</td></tr>
+</tbody></table>
+<p>Ranker B wins two thirds of the queries, although the clicks carry no information whatsoever.
+Ranker B just happens to rank c higher, and c ends up in the part of the list the credit attribution looks at.
+Such a bias can easily flip the result of an experiment, since real rankers often differ by exactly such small shifts.</p>
+<h2 id="what-s-next"><a class="zola-anchor" href="#what-s-next" aria-label="Anchor link for: what-s-next">What's next?</a></h2>
+<p>We have seen that interleaving compares two rankers on the same users and queries,
+and that balanced interleaving gives a simple way to do it.
+Unfortunately, it also prefers one of the rankers even when users click at random.</p>
+<p>In the second part, which is coming soon, I will go through:</p>
+<ul>
+<li>Team-Draft interleaving, which fixes this bias and is the method most companies use in practice;</li>
+<li>the disadvantages of interleaving you should be aware of before replacing your A/B-tests;</li>
+<li>the sensitivity gains reported in the literature and by the industry;</li>
+<li>how Netflix, Airbnb, DoorDash, Etsy and others apply interleaving.</li>
+</ul>
+<h2 id="resources"><a class="zola-anchor" href="#resources" aria-label="Anchor link for: resources">Resources</a></h2>
+<ul>
+<li><a href="https://www.cs.cornell.edu/~tj/publications/joachims_02b.pdf">Evaluating Retrieval Performance using Clickthrough Data | Joachims, 2002</a></li>
+<li><a href="https://www.cs.cornell.edu/people/tj/publications/chapelle_etal_12a.pdf">Large-Scale Validation and Analysis of Interleaved Search Evaluation | Chapelle et al., 2012</a></li>
+<li><a href="https://staff.fnwi.uva.nl/m.derijke/wp-content/papercite-data/pdf/hofmann-fidelity-2013.pdf">Fidelity, Soundness, and Efficiency of Interleaved Comparison Methods | Hofmann et al., 2013</a></li>
+<li><a href="https://dl.acm.org/doi/10.1145/3331184.3331378">Effective Online Evaluation for Web Search | SIGIR 2019</a></li>
+<li><a href="https://research.yandex.com/tutorials/online-evaluation/sigir-2019">Online Evaluation for Effective Web Service Development | Yandex SIGIR 2019 Tutorial</a></li>
+<li><a href="https://link.springer.com/chapter/10.1007/978-3-319-41718-9_3">A Short Survey on Online and Offline Methods for Search Quality Evaluation</a></li>
+<li><a href="https://www.youtube.com/watch?v=-1npOZBQ7AQ">Addressing Variance in AB tests: Interleaved Evaluation of Rankers | Erik Bernhardson, Haystack 2019</a></li>
+<li><a href="https://medium.com/@juanc.olamendy/interleaving-experiments-revolutionizing-recommender-system-evaluation-3d42bc5e5ce2">Interleaving Experiments: Revolutionizing Recommender System Evaluation | Juan C Olamendy</a></li>
+</ul>
+
+        </section>
+    </article>
+</main>
+
+
+
+        
+        <div class="giscus"></div>
+        <script src="https://giscus.app/client.js"
+        data-repo="rproskuryakov/rproskuryakov.github.io"
+        data-repo-id="R_kgDOMhJbhQ"
+        data-category="Announcements"
+        data-category-id="DIC_kwDOMhJbhc4CjbIh"
+        data-mapping="url"
+        data-strict="0"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="light_tritanopia"
+        data-lang="en"
+        crossorigin="anonymous"
+        async>
+</script>
+        
+
+    </div>
+</body>
+
+</html>

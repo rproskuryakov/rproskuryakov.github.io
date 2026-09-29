@@ -1,0 +1,601 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title>Rodion Proskuriakov</title>
+    <link rel="self" type="application/atom+xml" href="https://rproskuryakov.github.io/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://rproskuryakov.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-09-29T00:00:00+00:00</updated>
+    <id>https://rproskuryakov.github.io/atom.xml</id>
+    <entry xml:lang="en">
+        <title>Interleaving, a Retrieval Online Evaluation Method Nobody Talks About. Part 1</title>
+        <published>2026-09-29T00:00:00+00:00</published>
+        <updated>2026-09-29T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://rproskuryakov.github.io/posts/interleaving-evaluation-tool-nobody-talks-about/"/>
+        <id>https://rproskuryakov.github.io/posts/interleaving-evaluation-tool-nobody-talks-about/</id>
+        
+        <content type="html" xml:base="https://rproskuryakov.github.io/posts/interleaving-evaluation-tool-nobody-talks-about/">&lt;h2 id=&quot;introduction&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#introduction&quot; aria-label=&quot;Anchor link for: introduction&quot;&gt;Introduction&lt;&#x2F;a&gt;&lt;&#x2F;h2&gt;
+&lt;p&gt;A&#x2F;B-testing has become a widely adopted tool for online evaluation of machine learning models across the industry in the past 15 years.
+Despite its advantages, there are still lots of issues to tackle.
+The main culprit of any A&#x2F;B-test is variance.
+Multiple efforts have been made throughout recent years to mitigate the problem.
+For instance, methods such as &lt;a href=&quot;https:&#x2F;&#x2F;exp-platform.com&#x2F;Documents&#x2F;2013-02-CUPED-ImprovingSensitivityOfControlledExperiments.pdf&quot;&gt;CUPED&lt;&#x2F;a&gt; were developed
+to reduce variance by using pre-experiment data as a covariate.&lt;&#x2F;p&gt;
+&lt;p&gt;Yet, when you work on search or recommendations, even a well-tuned A&#x2F;B-test often needs weeks of traffic
+to detect a change in ranking quality.
+If your team produces several ranking hypotheses a week, the experimentation platform quickly becomes the bottleneck.&lt;&#x2F;p&gt;
+&lt;p&gt;There is another method to reduce variance in such cases that almost nobody talks about: interleaving.
+Originally, it was developed to test web search engines, but it can be applied to online tests of any ranking model.
+Companies such as Netflix, Airbnb, DoorDash and Amazon report that it detects the winning ranker
+with one or two orders of magnitude less traffic than a classic A&#x2F;B-test.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;who-is-it-for&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#who-is-it-for&quot; aria-label=&quot;Anchor link for: who-is-it-for&quot;&gt;Who is it for?&lt;&#x2F;a&gt;&lt;&#x2F;h2&gt;
+&lt;p&gt;This post is for ML engineers, search engineers and data scientists who run online experiments
+on search ranking or recommender systems and want to iterate faster.
+I assume you are familiar with the basics of A&#x2F;B-testing and hypothesis testing.
+No prior knowledge of interleaving is required.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;overview&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#overview&quot; aria-label=&quot;Anchor link for: overview&quot;&gt;Overview&lt;&#x2F;a&gt;&lt;&#x2F;h2&gt;
+&lt;p&gt;This is the first post of a series on interleaving.
+In this part, I will walk you through:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;why A&#x2F;B-tests struggle with ranking models;&lt;&#x2F;li&gt;
+&lt;li&gt;the idea behind interleaving and the first method, balanced interleaving;&lt;&#x2F;li&gt;
+&lt;li&gt;the general framework every interleaving method fits into: interleaving policy and credit attribution;&lt;&#x2F;li&gt;
+&lt;li&gt;the bias that makes balanced interleaving unreliable.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;In the second part, coming soon, we will look at Team-Draft interleaving,
+the limitations of interleaving and how the industry uses it.
+So, let&#x27;s get started!&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;why-a-b-tests-struggle-with-ranking&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#why-a-b-tests-struggle-with-ranking&quot; aria-label=&quot;Anchor link for: why-a-b-tests-struggle-with-ranking&quot;&gt;Why A&#x2F;B-tests struggle with ranking&lt;&#x2F;a&gt;&lt;&#x2F;h2&gt;
+&lt;p&gt;Let&#x27;s look at the sources of variance in testing a search engine.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;users-are-different&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#users-are-different&quot; aria-label=&quot;Anchor link for: users-are-different&quot;&gt;Users are different&lt;&#x2F;a&gt;&lt;&#x2F;h3&gt;
+&lt;p&gt;In a classic A&#x2F;B-test, the population is split into two groups: one is served by ranker A, the other by ranker B.
+The problem is that users contribute very differently to the metric.
+A heavy user who makes fifty searches a day and a casual user who searches once a week land in the groups randomly,
+and the difference in their behaviour is often much larger than the difference between the rankers.&lt;&#x2F;p&gt;
+&lt;p&gt;Think of a cola taste test.
+You could give brand A to one group of people and brand B to another group and compare how much they liked it.
+Or you could give both glasses to the same person and ask which one tastes better.
+The second design removes the difference between people from the comparison entirely,
+and you need far fewer participants to get a confident answer.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;queries-are-different&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#queries-are-different&quot; aria-label=&quot;Anchor link for: queries-are-different&quot;&gt;Queries are different&lt;&#x2F;a&gt;&lt;&#x2F;h3&gt;
+&lt;p&gt;The same applies to queries.
+Some queries are navigational and both rankers return the same obvious result at the first position.
+Others are ambiguous and no ranker performs well on them.
+Only a fraction of queries are &lt;em&gt;competitive&lt;&#x2F;em&gt;, meaning that the rankers produce meaningfully different results.
+In an A&#x2F;B-test, the non-competitive queries still contribute noise to the metric, but no signal.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;randomization-unit&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#randomization-unit&quot; aria-label=&quot;Anchor link for: randomization-unit&quot;&gt;Randomization unit&lt;&#x2F;a&gt;&lt;&#x2F;h3&gt;
+&lt;p&gt;Finally, one should choose a randomization unit: user, session or query.
+Randomizing by user is the most common choice as it keeps the experience consistent,
+but it maximizes the between-user variance described above.
+Randomizing by query reduces variance, but breaks the user experience and makes long-term metrics impossible to measure.&lt;&#x2F;p&gt;
+&lt;p&gt;Interleaving takes the &quot;same person tastes both glasses&quot; approach.
+Every user sees a single result list that combines the outputs of both rankers,
+and the user&#x27;s own clicks tell us which ranker they prefer.&lt;&#x2F;p&gt;
+&lt;pre class=&quot;mermaid&quot;&gt;flowchart LR
+    subgraph AB[&quot;A&#x2F;B-test&quot;]
+        direction TB
+        U1[&quot;Users&quot;] --&gt; S{&quot;Random split&quot;}
+        S --&gt;|50%| RA[&quot;Ranker A&quot;]
+        S --&gt;|50%| RB[&quot;Ranker B&quot;]
+        RA --&gt; MA[&quot;Metric of group A&quot;]
+        RB --&gt; MB[&quot;Metric of group B&quot;]
+    end
+    subgraph IL[&quot;Interleaving&quot;]
+        direction TB
+        U2[&quot;Users&quot;] --&gt; Q[&quot;Query&quot;]
+        Q --&gt; A2[&quot;Ranker A&quot;]
+        Q --&gt; B2[&quot;Ranker B&quot;]
+        A2 --&gt; M[&quot;Interleaved list&quot;]
+        B2 --&gt; M
+        M --&gt; C[&quot;Clicks credited to A or B&quot;]
+    end&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;the-idea-of-interleaving&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#the-idea-of-interleaving&quot; aria-label=&quot;Anchor link for: the-idea-of-interleaving&quot;&gt;The idea of interleaving&lt;&#x2F;a&gt;&lt;&#x2F;h2&gt;
+&lt;p&gt;The idea behind interleaving was introduced by Thorsten Joachims in 2002 in
+&lt;a href=&quot;https:&#x2F;&#x2F;www.cs.cornell.edu&#x2F;~tj&#x2F;publications&#x2F;joachims_02b.pdf&quot;&gt;Evaluating Retrieval Performance using Clickthrough Data&lt;&#x2F;a&gt;.&lt;&#x2F;p&gt;
+&lt;p&gt;Absolute click metrics are hard to interpret: users click on what they see first,
+and the click-through rate depends heavily on the query.
+Joachims proposed to ask a &lt;em&gt;relative&lt;&#x2F;em&gt; question instead: given a combined list of results from both rankers,
+does the user click more on results from A or from B?&lt;&#x2F;p&gt;
+&lt;p&gt;Let $C_a$ and $C_b$ be the number of clicks on results coming from rankers A and B for a query,
+and $C$ the total number of clicks.
+Joachims showed that under reasonable assumptions the relevance of the rankers can be compared by estimating
+$E\left(\frac{C_a - C_b}{C}\right)$.
+If this value is significantly bigger than zero, ranker A produces more relevant results than ranker B.&lt;&#x2F;p&gt;
+&lt;p&gt;The method relies on two assumptions:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;users click on relevant results more often than on non-relevant ones;&lt;&#x2F;li&gt;
+&lt;li&gt;users do not click more frequently on results of one ranker independently of their relevance.
+In other words, the combined list must be &lt;em&gt;blind&lt;&#x2F;em&gt;: the user cannot tell which ranker produced which result.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;The experiments in the paper support both assumptions,
+and the outcome of interleaving agrees with manual relevance judgements.&lt;&#x2F;p&gt;
+&lt;p&gt;There is also a nice side effect.
+In an A&#x2F;B-test, half of the users are fully exposed to the treatment, even if the new model turns out to be terrible.
+With interleaving, a bad ranker contributes only part of each result list, so the damage to user experience is limited.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;balanced-interleaving&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#balanced-interleaving&quot; aria-label=&quot;Anchor link for: balanced-interleaving&quot;&gt;Balanced interleaving&lt;&#x2F;a&gt;&lt;&#x2F;h2&gt;
+&lt;p&gt;The first interleaving method is called balanced interleaving.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;interleaving-policy&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#interleaving-policy&quot; aria-label=&quot;Anchor link for: interleaving-policy&quot;&gt;Interleaving policy&lt;&#x2F;a&gt;&lt;&#x2F;h3&gt;
+&lt;p&gt;Formally, let $A = (a_1, a_2, ..., a_n)$ and $B = (b_1, b_2, ..., b_n)$ be the outputs of two ranking models.
+Let $I = (i_1, i_2, ..., i_n)$ be the combined ranking.&lt;&#x2F;p&gt;
+&lt;p&gt;Balanced interleaving flips a coin once per query to decide which ranker goes first.
+Then it takes results from A and B alternately, skipping the ones already present in $I$.
+The resulting list has a nice property: for any cut-off $k$, the top-$k$ of $I$ contains the top-$k_a$ results of A
+and the top-$k_b$ results of B, where $k_a$ and $k_b$ differ by at most one.&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;python&quot; style=&quot;background-color:#2e3440;color:#d8dee9;&quot; class=&quot;language-python &quot;&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;import &lt;&#x2F;span&gt;&lt;span&gt;random
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;def &lt;&#x2F;span&gt;&lt;span style=&quot;color:#88c0d0;&quot;&gt;balanced_interleave&lt;&#x2F;span&gt;&lt;span&gt;(a&lt;&#x2F;span&gt;&lt;span style=&quot;color:#eceff4;&quot;&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;list&lt;&#x2F;span&gt;&lt;span style=&quot;color:#eceff4;&quot;&gt;, &lt;&#x2F;span&gt;&lt;span&gt;b&lt;&#x2F;span&gt;&lt;span style=&quot;color:#eceff4;&quot;&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;list&lt;&#x2F;span&gt;&lt;span style=&quot;color:#eceff4;&quot;&gt;, &lt;&#x2F;span&gt;&lt;span&gt;length&lt;&#x2F;span&gt;&lt;span style=&quot;color:#eceff4;&quot;&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;int&lt;&#x2F;span&gt;&lt;span&gt;) &lt;&#x2F;span&gt;&lt;span style=&quot;color:#eceff4;&quot;&gt;-&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;list&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;    a_first &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;= &lt;&#x2F;span&gt;&lt;span&gt;random&lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#88c0d0;&quot;&gt;random&lt;&#x2F;span&gt;&lt;span&gt;() &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;&amp;lt; &lt;&#x2F;span&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span style=&quot;color:#eceff4;&quot;&gt;.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;5
+&lt;&#x2F;span&gt;&lt;span&gt;    result &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;= &lt;&#x2F;span&gt;&lt;span&gt;[]
+&lt;&#x2F;span&gt;&lt;span&gt;    ka, kb &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;= &lt;&#x2F;span&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;0
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;while &lt;&#x2F;span&gt;&lt;span&gt;(ka &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;&amp;lt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-style:italic;color:#88c0d0;&quot;&gt;len&lt;&#x2F;span&gt;&lt;span&gt;(a) &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;or &lt;&#x2F;span&gt;&lt;span&gt;kb &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;&amp;lt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-style:italic;color:#88c0d0;&quot;&gt;len&lt;&#x2F;span&gt;&lt;span&gt;(b)) &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;and &lt;&#x2F;span&gt;&lt;span style=&quot;font-style:italic;color:#88c0d0;&quot;&gt;len&lt;&#x2F;span&gt;&lt;span&gt;(result) &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;&amp;lt; &lt;&#x2F;span&gt;&lt;span&gt;length:
+&lt;&#x2F;span&gt;&lt;span&gt;        a_turn &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;= &lt;&#x2F;span&gt;&lt;span&gt;ka &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;&amp;lt; &lt;&#x2F;span&gt;&lt;span&gt;kb &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;or &lt;&#x2F;span&gt;&lt;span&gt;(ka &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;== &lt;&#x2F;span&gt;&lt;span&gt;kb &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;and &lt;&#x2F;span&gt;&lt;span&gt;a_first)
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;if &lt;&#x2F;span&gt;&lt;span&gt;kb &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;&amp;gt;= &lt;&#x2F;span&gt;&lt;span style=&quot;font-style:italic;color:#88c0d0;&quot;&gt;len&lt;&#x2F;span&gt;&lt;span&gt;(b) &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;or &lt;&#x2F;span&gt;&lt;span&gt;(ka &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;&amp;lt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-style:italic;color:#88c0d0;&quot;&gt;len&lt;&#x2F;span&gt;&lt;span&gt;(a) &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;and &lt;&#x2F;span&gt;&lt;span&gt;a_turn):
+&lt;&#x2F;span&gt;&lt;span&gt;            &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;if &lt;&#x2F;span&gt;&lt;span&gt;a[ka] &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;not in &lt;&#x2F;span&gt;&lt;span&gt;result:
+&lt;&#x2F;span&gt;&lt;span&gt;                result&lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#88c0d0;&quot;&gt;append&lt;&#x2F;span&gt;&lt;span&gt;(a[ka])
+&lt;&#x2F;span&gt;&lt;span&gt;            ka &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;+= &lt;&#x2F;span&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;1
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;else&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;            &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;if &lt;&#x2F;span&gt;&lt;span&gt;b[kb] &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;not in &lt;&#x2F;span&gt;&lt;span&gt;result:
+&lt;&#x2F;span&gt;&lt;span&gt;                result&lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#88c0d0;&quot;&gt;append&lt;&#x2F;span&gt;&lt;span&gt;(b[kb])
+&lt;&#x2F;span&gt;&lt;span&gt;            kb &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;+= &lt;&#x2F;span&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;1
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;return &lt;&#x2F;span&gt;&lt;span&gt;result
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;For example, let A = (a, b, c) and B = (b, d, a).
+Depending on the coin, the user sees one of two lists:&lt;&#x2F;p&gt;
+&lt;pre class=&quot;mermaid&quot;&gt;flowchart TD
+    Q[&quot;Query&quot;] --&gt; Coin{&quot;Coin flip&quot;}
+    Coin --&gt;|&quot;A first&quot;| L1[&quot;1. a from A&lt;br&#x2F;&gt;2. b from B&lt;br&#x2F;&gt;3. d from B&lt;br&#x2F;&gt;4. c from A&quot;]
+    Coin --&gt;|&quot;B first&quot;| L2[&quot;1. b from B&lt;br&#x2F;&gt;2. a from A&lt;br&#x2F;&gt;3. d from B&lt;br&#x2F;&gt;4. c from A&quot;]&lt;&#x2F;pre&gt;
+&lt;p&gt;Note that b, which is ranked highly by both models, appears only once, and the ranker that would add it second simply skips it.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;credit-attribution&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#credit-attribution&quot; aria-label=&quot;Anchor link for: credit-attribution&quot;&gt;Credit attribution&lt;&#x2F;a&gt;&lt;&#x2F;h3&gt;
+&lt;p&gt;Let $c_1, c_2, ..., c_m$ be the ranks of the clicked results in $I$ and $c_{max}$ the largest of them, i.e. the lowest clicked position.
+Joachims proposes to look only at the part of both rankings the user has actually examined.
+Let&lt;&#x2F;p&gt;
+&lt;p&gt;$$k = \min \lbrace j : i_{c_{max}} = a_j \lor i_{c_{max}} = b_j \rbrace$$&lt;&#x2F;p&gt;
+&lt;p&gt;Then the clicks attributed to A are the clicked results that appear among the top-$k$ results of A, $h_a$,
+and the same for B, $h_b$.
+If $h_a &amp;gt; h_b$, ranker A wins the query; if $h_a &amp;lt; h_b$, B wins; otherwise it is a tie.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;statistics&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#statistics&quot; aria-label=&quot;Anchor link for: statistics&quot;&gt;Statistics&lt;&#x2F;a&gt;&lt;&#x2F;h3&gt;
+&lt;p&gt;Having collected the outcomes, we need to decide whether one ranker is significantly better.&lt;&#x2F;p&gt;
+&lt;p&gt;Joachims suggests a two-tailed paired t-test on per-query samples $h_a&#x2F;c$ and $h_b&#x2F;c$.
+In practice, collecting samples that hold the assumptions of the t-test can be challenging.
+In such cases, the author proposes an alternative approach, the binomial sign test,
+which only looks at the number of queries won by each ranker.&lt;&#x2F;p&gt;
+&lt;p&gt;Later works aggregate the outcomes into a single preference score.
+Let $W_A$ and $W_B$ be the number of queries won by A and B correspondingly, and $T_{AB}$ the number of ties:&lt;&#x2F;p&gt;
+&lt;p&gt;$$ \Delta_{AB} = \frac{W_A + \frac{1}{2}T_{AB}}{W_A + W_B + T_{AB}} - 0.5$$&lt;&#x2F;p&gt;
+&lt;p&gt;A positive value of $\Delta_{AB}$ indicates that A is better than B, a negative value indicates that B is better.
+Queries without clicks carry no information and are excluded.&lt;&#x2F;p&gt;
+&lt;p&gt;To get a confidence interval of $\Delta_{AB}$, the bootstrap is commonly used.
+Subsamples are formed by drawing queries, sessions or users with replacement, $\Delta_{AB}$ is computed for each subsample,
+and the percentile method gives the interval.
+Resampling by user rather than by query accounts for the fact that queries of the same user are correlated.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;general-framework&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#general-framework&quot; aria-label=&quot;Anchor link for: general-framework&quot;&gt;General framework&lt;&#x2F;a&gt;&lt;&#x2F;h2&gt;
+&lt;p&gt;Balanced interleaving highlights two design decisions every interleaving method has to make:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;interleaving policy&lt;&#x2F;strong&gt;: how the combined list is constructed from the compared rankings;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;credit attribution&lt;&#x2F;strong&gt;: how user actions are attributed back to the compared rankers.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;pre class=&quot;mermaid&quot;&gt;sequenceDiagram
+    actor User
+    participant I as Interleaver
+    participant A as Ranker A
+    participant B as Ranker B
+    participant L as Experiment log
+    User-&gt;&gt;I: query
+    I-&gt;&gt;A: query
+    I-&gt;&gt;B: query
+    A--&gt;&gt;I: ranking A
+    B--&gt;&gt;I: ranking B
+    Note over I: interleaving policy
+    I--&gt;&gt;User: combined list
+    I-&gt;&gt;L: list with the origin of every result
+    User-&gt;&gt;L: clicks
+    Note over L: credit attribution
+    Note over L: aggregation and significance test&lt;&#x2F;pre&gt;
+&lt;p&gt;Several evaluation criteria for a good interleaving method have been proposed in the literature,
+for example in &lt;a href=&quot;https:&#x2F;&#x2F;staff.fnwi.uva.nl&#x2F;m.derijke&#x2F;wp-content&#x2F;papercite-data&#x2F;pdf&#x2F;hofmann-fidelity-2013.pdf&quot;&gt;Fidelity, Soundness, and Efficiency of Interleaved Comparison Methods&lt;&#x2F;a&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;fidelity&lt;&#x2F;strong&gt;: the method declares the correct winner, in particular it does not prefer any ranker when clicks are random;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;sensitivity&lt;&#x2F;strong&gt; (or efficiency): the method needs as few observations as possible to reach a confident conclusion;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;user experience&lt;&#x2F;strong&gt;: the combined list is not worse than the lists being compared.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;Each method has its own advantages and limitations with respect to these criteria.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;the-bias-of-balanced-interleaving&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#the-bias-of-balanced-interleaving&quot; aria-label=&quot;Anchor link for: the-bias-of-balanced-interleaving&quot;&gt;The bias of balanced interleaving&lt;&#x2F;a&gt;&lt;&#x2F;h2&gt;
+&lt;p&gt;Balanced interleaving turns out to be biased
+when the compared rankings are similar but shifted by a position or so,
+as shown in &lt;a href=&quot;https:&#x2F;&#x2F;www.cs.cornell.edu&#x2F;people&#x2F;tj&#x2F;publications&#x2F;chapelle_etal_12a.pdf&quot;&gt;Large-Scale Validation and Analysis of Interleaved Search Evaluation&lt;&#x2F;a&gt;.&lt;&#x2F;p&gt;
+&lt;p&gt;Let A = (a, b, c) and B = (b, c, a).
+Depending on the coin, the combined list is either (a, b, c) or (b, a, c).
+Now, assume a user who does not care about relevance at all and clicks on a single random result.&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Combined list&lt;&#x2F;th&gt;&lt;th&gt;Clicked result&lt;&#x2F;th&gt;&lt;th&gt;$k$&lt;&#x2F;th&gt;&lt;th&gt;Winner&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;(a, b, c)&lt;&#x2F;td&gt;&lt;td&gt;a&lt;&#x2F;td&gt;&lt;td&gt;1&lt;&#x2F;td&gt;&lt;td&gt;A&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;(a, b, c)&lt;&#x2F;td&gt;&lt;td&gt;b&lt;&#x2F;td&gt;&lt;td&gt;1&lt;&#x2F;td&gt;&lt;td&gt;B&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;(a, b, c)&lt;&#x2F;td&gt;&lt;td&gt;c&lt;&#x2F;td&gt;&lt;td&gt;2&lt;&#x2F;td&gt;&lt;td&gt;B&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;(b, a, c)&lt;&#x2F;td&gt;&lt;td&gt;b&lt;&#x2F;td&gt;&lt;td&gt;1&lt;&#x2F;td&gt;&lt;td&gt;B&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;(b, a, c)&lt;&#x2F;td&gt;&lt;td&gt;a&lt;&#x2F;td&gt;&lt;td&gt;1&lt;&#x2F;td&gt;&lt;td&gt;A&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;(b, a, c)&lt;&#x2F;td&gt;&lt;td&gt;c&lt;&#x2F;td&gt;&lt;td&gt;2&lt;&#x2F;td&gt;&lt;td&gt;B&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;Ranker B wins two thirds of the queries, although the clicks carry no information whatsoever.
+Ranker B just happens to rank c higher, and c ends up in the part of the list the credit attribution looks at.
+Such a bias can easily flip the result of an experiment, since real rankers often differ by exactly such small shifts.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;what-s-next&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#what-s-next&quot; aria-label=&quot;Anchor link for: what-s-next&quot;&gt;What&#x27;s next?&lt;&#x2F;a&gt;&lt;&#x2F;h2&gt;
+&lt;p&gt;We have seen that interleaving compares two rankers on the same users and queries,
+and that balanced interleaving gives a simple way to do it.
+Unfortunately, it also prefers one of the rankers even when users click at random.&lt;&#x2F;p&gt;
+&lt;p&gt;In the second part, which is coming soon, I will go through:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Team-Draft interleaving, which fixes this bias and is the method most companies use in practice;&lt;&#x2F;li&gt;
+&lt;li&gt;the disadvantages of interleaving you should be aware of before replacing your A&#x2F;B-tests;&lt;&#x2F;li&gt;
+&lt;li&gt;the sensitivity gains reported in the literature and by the industry;&lt;&#x2F;li&gt;
+&lt;li&gt;how Netflix, Airbnb, DoorDash, Etsy and others apply interleaving.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;resources&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#resources&quot; aria-label=&quot;Anchor link for: resources&quot;&gt;Resources&lt;&#x2F;a&gt;&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;https:&#x2F;&#x2F;www.cs.cornell.edu&#x2F;~tj&#x2F;publications&#x2F;joachims_02b.pdf&quot;&gt;Evaluating Retrieval Performance using Clickthrough Data | Joachims, 2002&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a href=&quot;https:&#x2F;&#x2F;www.cs.cornell.edu&#x2F;people&#x2F;tj&#x2F;publications&#x2F;chapelle_etal_12a.pdf&quot;&gt;Large-Scale Validation and Analysis of Interleaved Search Evaluation | Chapelle et al., 2012&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a href=&quot;https:&#x2F;&#x2F;staff.fnwi.uva.nl&#x2F;m.derijke&#x2F;wp-content&#x2F;papercite-data&#x2F;pdf&#x2F;hofmann-fidelity-2013.pdf&quot;&gt;Fidelity, Soundness, and Efficiency of Interleaved Comparison Methods | Hofmann et al., 2013&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a href=&quot;https:&#x2F;&#x2F;dl.acm.org&#x2F;doi&#x2F;10.1145&#x2F;3331184.3331378&quot;&gt;Effective Online Evaluation for Web Search | SIGIR 2019&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a href=&quot;https:&#x2F;&#x2F;research.yandex.com&#x2F;tutorials&#x2F;online-evaluation&#x2F;sigir-2019&quot;&gt;Online Evaluation for Effective Web Service Development | Yandex SIGIR 2019 Tutorial&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a href=&quot;https:&#x2F;&#x2F;link.springer.com&#x2F;chapter&#x2F;10.1007&#x2F;978-3-319-41718-9_3&quot;&gt;A Short Survey on Online and Offline Methods for Search Quality Evaluation&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a href=&quot;https:&#x2F;&#x2F;www.youtube.com&#x2F;watch?v=-1npOZBQ7AQ&quot;&gt;Addressing Variance in AB tests: Interleaved Evaluation of Rankers | Erik Bernhardson, Haystack 2019&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a href=&quot;https:&#x2F;&#x2F;medium.com&#x2F;@juanc.olamendy&#x2F;interleaving-experiments-revolutionizing-recommender-system-evaluation-3d42bc5e5ce2&quot;&gt;Interleaving Experiments: Revolutionizing Recommender System Evaluation | Juan C Olamendy&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>Deploying a Sentence Transformer with Triton Inference Server</title>
+        <published>2025-06-30T00:00:00+00:00</published>
+        <updated>2025-06-30T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://rproskuryakov.github.io/posts/triton-sentence-transformer/"/>
+        <id>https://rproskuryakov.github.io/posts/triton-sentence-transformer/</id>
+        
+        <content type="html" xml:base="https://rproskuryakov.github.io/posts/triton-sentence-transformer/">&lt;h2 id=&quot;introduction&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#introduction&quot; aria-label=&quot;Anchor link for: introduction&quot;&gt;Introduction&lt;&#x2F;a&gt;&lt;&#x2F;h2&gt;
+&lt;p&gt;I was recently tasked with updating a fine-tuned retrieval model deployed on the Triton Inference Server.
+The model was underperforming, and the customer needed lower latency and a higher requests-per-second (RPS) rate.
+Since the deployment was written in pure PyTorch, which isn’t the most efficient solution for production, optimization was necessary.
+The process turned out to be quite an interesting journey, so I wanted to share my experience.&lt;&#x2F;p&gt;
+&lt;p&gt;You might wonder why we use a specialized inference server instead of simply deploying the model in a FastAPI service.
+There are several reasons for this.&lt;&#x2F;p&gt;
+&lt;p&gt;First, FastAPI is not designed specifically for deploying machine learning models;
+its strength lies in handling high-load backend services with varying levels of business logic complexity.&lt;&#x2F;p&gt;
+&lt;p&gt;Second, FastAPI lacks resource management features like GPU utilization, which is crucial for the performance of ML models.
+Additionally, advanced optimizations such as dynamic batching, caching, and I&#x2F;O binding would need to be implemented manually in FastAPI.
+In contrast, Triton Inference Server is built specifically for these tasks, providing efficient use of computational resources and fine-grained control over your infrastructure.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;overview&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#overview&quot; aria-label=&quot;Anchor link for: overview&quot;&gt;Overview&lt;&#x2F;a&gt;&lt;&#x2F;h2&gt;
+&lt;p&gt;In this tutorial, I will walk you through deploying the &lt;code&gt;intfloat&#x2F;multilingual-e5-large&lt;&#x2F;code&gt; model using the Triton Inference Server.
+We&#x27;ll also explore how to convert the model to the ONNX format and optimise it with the TensorRT Execution Provider for ONNX Runtime.
+The code is executed on the following server configuration: AMD EPYC with Nvidia Ampere A100, 1GPU, 28vCPU, 119Gb RAM.
+All the code is available in &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;rproskuryakov&#x2F;triton-sentence-transformer-tutorial&quot;&gt;this repository&lt;&#x2F;a&gt;.
+So, let&#x27;s get started!&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;let-s-speed-up-the-model&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#let-s-speed-up-the-model&quot; aria-label=&quot;Anchor link for: let-s-speed-up-the-model&quot;&gt;Let&#x27;s speed up the model&lt;&#x2F;a&gt;&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;baseline-python-backend&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#baseline-python-backend&quot; aria-label=&quot;Anchor link for: baseline-python-backend&quot;&gt;Baseline: Python Backend&lt;&#x2F;a&gt;&lt;&#x2F;h3&gt;
+&lt;p&gt;Triton Inference Server supports multiple backends, enabling the deployment of a wide range of models,
+from boosting models to large language models (LLMs).&lt;&#x2F;p&gt;
+&lt;p&gt;The easiest way to deploy a model with Triton is to use the Python backend,
+allowing computations to be performed via the &lt;a href=&quot;https:&#x2F;&#x2F;huggingface.co&#x2F;docs&#x2F;transformers&#x2F;v4.44.0&#x2F;en&#x2F;main_classes&#x2F;pipelines&quot;&gt;Hugging Face pipeline&lt;&#x2F;a&gt;.&lt;&#x2F;p&gt;
+&lt;p&gt;For the Python backend, the model&#x27;s implementation needs to be placed in
+the &lt;code&gt;&amp;lt;model_name&amp;gt;&#x2F;1&#x2F;model.py&lt;&#x2F;code&gt; file.
+The standard directory structure for deploying a model on Triton
+can be found in the &lt;a href=&quot;https:&#x2F;&#x2F;docs.nvidia.com&#x2F;deeplearning&#x2F;triton-inference-server&#x2F;user-guide&#x2F;docs&#x2F;user_guide&#x2F;model_repository.html#repository-layout&quot;&gt;official documentation&lt;&#x2F;a&gt;.&lt;&#x2F;p&gt;
+&lt;p&gt;To get started, define a class named &lt;code&gt;TritonPythonModel&lt;&#x2F;code&gt; and implement the &lt;code&gt;execute&lt;&#x2F;code&gt; method.
+Optionally, you can also implement the &lt;code&gt;initialize&lt;&#x2F;code&gt; and &lt;code&gt;finalize&lt;&#x2F;code&gt; methods
+if the model requires resource loading before execution or clean-up tasks before shutting down.&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;python&quot; style=&quot;background-color:#2e3440;color:#d8dee9;&quot; class=&quot;language-python &quot;&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;from &lt;&#x2F;span&gt;&lt;span&gt;transformers &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;import &lt;&#x2F;span&gt;&lt;span&gt;pipeline  
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;import &lt;&#x2F;span&gt;&lt;span&gt;triton_python_backend_utils &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;as &lt;&#x2F;span&gt;&lt;span&gt;pb_utils  
+&lt;&#x2F;span&gt;&lt;span&gt;  
+&lt;&#x2F;span&gt;&lt;span&gt;  
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;class &lt;&#x2F;span&gt;&lt;span style=&quot;color:#8fbcbb;&quot;&gt;TritonPythonModel&lt;&#x2F;span&gt;&lt;span&gt;:  
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#616e88;&quot;&gt;&amp;quot;&amp;quot;&amp;quot;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#616e88;&quot;&gt;    Your Python model must use the same class name.
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#616e88;&quot;&gt;    Every Python model that is created must have &amp;quot;TritonPythonModel&amp;quot; 
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#616e88;&quot;&gt;    as the class name. 
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#616e88;&quot;&gt;    &amp;quot;&amp;quot;&amp;quot;  
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;def &lt;&#x2F;span&gt;&lt;span style=&quot;color:#88c0d0;&quot;&gt;initialize&lt;&#x2F;span&gt;&lt;span&gt;(self&lt;&#x2F;span&gt;&lt;span style=&quot;color:#eceff4;&quot;&gt;, &lt;&#x2F;span&gt;&lt;span&gt;args):  
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;self.&lt;&#x2F;span&gt;&lt;span&gt;_pipeline &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;= &lt;&#x2F;span&gt;&lt;span style=&quot;color:#88c0d0;&quot;&gt;pipeline&lt;&#x2F;span&gt;&lt;span&gt;(  
+&lt;&#x2F;span&gt;&lt;span&gt;            &lt;&#x2F;span&gt;&lt;span style=&quot;color:#a3be8c;&quot;&gt;&amp;quot;feature-extraction&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#eceff4;&quot;&gt;,
+&lt;&#x2F;span&gt;&lt;span&gt;            model&lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span style=&quot;color:#a3be8c;&quot;&gt;&amp;quot;intfloat&#x2F;multilingual-e5-large&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#eceff4;&quot;&gt;,
+&lt;&#x2F;span&gt;&lt;span&gt;        )  
+&lt;&#x2F;span&gt;&lt;span&gt;        
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;def &lt;&#x2F;span&gt;&lt;span style=&quot;color:#88c0d0;&quot;&gt;execute&lt;&#x2F;span&gt;&lt;span&gt;(self&lt;&#x2F;span&gt;&lt;span style=&quot;color:#eceff4;&quot;&gt;, &lt;&#x2F;span&gt;&lt;span&gt;requests):  
+&lt;&#x2F;span&gt;&lt;span&gt;        responses &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;= &lt;&#x2F;span&gt;&lt;span&gt;[]  
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;request &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;in &lt;&#x2F;span&gt;&lt;span&gt;requests: 
+&lt;&#x2F;span&gt;&lt;span&gt;            input_ &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;= &lt;&#x2F;span&gt;&lt;span&gt;pb_utils&lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#88c0d0;&quot;&gt;get_input_tensor_by_name&lt;&#x2F;span&gt;&lt;span&gt;(request&lt;&#x2F;span&gt;&lt;span style=&quot;color:#eceff4;&quot;&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#a3be8c;&quot;&gt;&amp;quot;text&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;)  
+&lt;&#x2F;span&gt;&lt;span&gt;            input_string &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;= &lt;&#x2F;span&gt;&lt;span&gt;input_&lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#88c0d0;&quot;&gt;as_numpy&lt;&#x2F;span&gt;&lt;span&gt;()  
+&lt;&#x2F;span&gt;&lt;span&gt;            requests_texts &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;= &lt;&#x2F;span&gt;&lt;span&gt;[i[&lt;&#x2F;span&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;]&lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#88c0d0;&quot;&gt;decode&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#a3be8c;&quot;&gt;&amp;quot;utf-8&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;) &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;i &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;in &lt;&#x2F;span&gt;&lt;span&gt;input_string]  
+&lt;&#x2F;span&gt;&lt;span&gt;  
+&lt;&#x2F;span&gt;&lt;span&gt;            batch &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;= self.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#88c0d0;&quot;&gt;tokenizer&lt;&#x2F;span&gt;&lt;span&gt;(  
+&lt;&#x2F;span&gt;&lt;span&gt;                requests_texts&lt;&#x2F;span&gt;&lt;span style=&quot;color:#eceff4;&quot;&gt;,
+&lt;&#x2F;span&gt;&lt;span&gt;                max_length&lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;512&lt;&#x2F;span&gt;&lt;span style=&quot;color:#eceff4;&quot;&gt;,
+&lt;&#x2F;span&gt;&lt;span&gt;                padding&lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;=True&lt;&#x2F;span&gt;&lt;span style=&quot;color:#eceff4;&quot;&gt;,
+&lt;&#x2F;span&gt;&lt;span&gt;                truncation&lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;=True&lt;&#x2F;span&gt;&lt;span style=&quot;color:#eceff4;&quot;&gt;,
+&lt;&#x2F;span&gt;&lt;span&gt;                return_tensors&lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span style=&quot;color:#a3be8c;&quot;&gt;&amp;quot;np&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#eceff4;&quot;&gt;,
+&lt;&#x2F;span&gt;&lt;span&gt;            ) 
+&lt;&#x2F;span&gt;&lt;span&gt;            responses&lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#88c0d0;&quot;&gt;append&lt;&#x2F;span&gt;&lt;span&gt;(  
+&lt;&#x2F;span&gt;&lt;span&gt;                pb_utils&lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#88c0d0;&quot;&gt;InferenceResponse&lt;&#x2F;span&gt;&lt;span&gt;(  
+&lt;&#x2F;span&gt;&lt;span&gt;                    output_tensors&lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt;[
+&lt;&#x2F;span&gt;&lt;span&gt;                        pb_utils&lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#88c0d0;&quot;&gt;Tensor&lt;&#x2F;span&gt;&lt;span&gt;(  
+&lt;&#x2F;span&gt;&lt;span&gt;                            &lt;&#x2F;span&gt;&lt;span style=&quot;color:#a3be8c;&quot;&gt;&amp;quot;output_input_ids&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#eceff4;&quot;&gt;,
+&lt;&#x2F;span&gt;&lt;span&gt;                            batch[&lt;&#x2F;span&gt;&lt;span style=&quot;color:#a3be8c;&quot;&gt;&amp;quot;input_ids&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;]&lt;&#x2F;span&gt;&lt;span style=&quot;color:#eceff4;&quot;&gt;,
+&lt;&#x2F;span&gt;&lt;span&gt;                        )&lt;&#x2F;span&gt;&lt;span style=&quot;color:#eceff4;&quot;&gt;, &lt;&#x2F;span&gt;&lt;span&gt;pb_utils&lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#88c0d0;&quot;&gt;Tensor&lt;&#x2F;span&gt;&lt;span&gt;(  
+&lt;&#x2F;span&gt;&lt;span&gt;                            &lt;&#x2F;span&gt;&lt;span style=&quot;color:#a3be8c;&quot;&gt;&amp;quot;output_attention_mask&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#eceff4;&quot;&gt;,
+&lt;&#x2F;span&gt;&lt;span&gt;                            batch[&lt;&#x2F;span&gt;&lt;span style=&quot;color:#a3be8c;&quot;&gt;&amp;quot;attention_mask&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;]&lt;&#x2F;span&gt;&lt;span style=&quot;color:#eceff4;&quot;&gt;,
+&lt;&#x2F;span&gt;&lt;span&gt;                        )
+&lt;&#x2F;span&gt;&lt;span&gt;                    ]
+&lt;&#x2F;span&gt;&lt;span&gt;                )
+&lt;&#x2F;span&gt;&lt;span&gt;            )  
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;return &lt;&#x2F;span&gt;&lt;span&gt;responses  
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;In the model configuration file, you must define a model name and choose a backend.&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;prototext&quot; style=&quot;background-color:#2e3440;color:#d8dee9;&quot; class=&quot;language-prototext &quot;&gt;&lt;code class=&quot;language-prototext&quot; data-lang=&quot;prototext&quot;&gt;&lt;span&gt;name: &amp;quot;multilingual-e5-large&amp;quot;  
+&lt;&#x2F;span&gt;&lt;span&gt;backend: &amp;quot;python&amp;quot;  
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;You also need to define inputs and outputs of the model which include names, data types and dimensions.&lt;br &#x2F;&gt;
+The string type always has a size of one dimension.&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;prototext&quot; style=&quot;background-color:#2e3440;color:#d8dee9;&quot; class=&quot;language-prototext &quot;&gt;&lt;code class=&quot;language-prototext&quot; data-lang=&quot;prototext&quot;&gt;&lt;span&gt;input [  
+&lt;&#x2F;span&gt;&lt;span&gt; { 
+&lt;&#x2F;span&gt;&lt;span&gt;   name: &amp;quot;text&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;   data_type: TYPE_STRING
+&lt;&#x2F;span&gt;&lt;span&gt;   dims: [ 1 ]
+&lt;&#x2F;span&gt;&lt;span&gt; }
+&lt;&#x2F;span&gt;&lt;span&gt;]  
+&lt;&#x2F;span&gt;&lt;span&gt;output [  
+&lt;&#x2F;span&gt;&lt;span&gt; { 
+&lt;&#x2F;span&gt;&lt;span&gt;   name: &amp;quot;output_vector&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;   data_type: TYPE_FP32
+&lt;&#x2F;span&gt;&lt;span&gt;   dims: [ 1024 ]
+&lt;&#x2F;span&gt;&lt;span&gt; }
+&lt;&#x2F;span&gt;&lt;span&gt;]  
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;what-is-onnx&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#what-is-onnx&quot; aria-label=&quot;Anchor link for: what-is-onnx&quot;&gt;What is ONNX&lt;&#x2F;a&gt;&lt;&#x2F;h3&gt;
+&lt;p&gt;ONNX is an open-source, hardware-agnostic format for storing and optimizing machine learning models.
+It supports a wide range of neural network architectures as well as some classical models.
+One of its key advantages is the availability of a dedicated ONNX runtime,
+which can be used for efficient inference across various environments.&lt;&#x2F;p&gt;
+&lt;p&gt;There are multiple ways to convert a transformer model to the ONNX format.
+A high-level approach involves using the &lt;code&gt;optimum-cli&lt;&#x2F;code&gt; tool, an extension of the Transformers library.
+This tool is specifically designed to convert transformer models into various formats,
+including ONNX, and optimize them for faster inference.
+You can find the complete list of supported architectures &lt;a href=&quot;https:&#x2F;&#x2F;huggingface.co&#x2F;docs&#x2F;optimum&#x2F;exporters&#x2F;onnx&#x2F;overview&quot;&gt;here&lt;&#x2F;a&gt;.
+For this post you should install optimum via pip or poetry with the proper dependencies. For example, installation with pip looks like:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#2e3440;color:#d8dee9;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span style=&quot;color:#88c0d0;&quot;&gt;pip&lt;&#x2F;span&gt;&lt;span&gt; install optimum&lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;[&lt;&#x2F;span&gt;&lt;span&gt;exporters,onnxruntime&lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;]
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;For a more low-level conversion method,
+you can refer to the &lt;a href=&quot;https:&#x2F;&#x2F;pytorch.org&#x2F;docs&#x2F;stable&#x2F;onnx.html&quot;&gt;official PyTorch documentation&lt;&#x2F;a&gt;.
+Additionally, if you want to perform a quality check during conversion with Optimum,
+you will need to install the &lt;code&gt;accelerate&lt;&#x2F;code&gt; package.&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#2e3440;color:#d8dee9;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span style=&quot;color:#88c0d0;&quot;&gt;optimum-cli&lt;&#x2F;span&gt;&lt;span&gt; export onnx --model intfloat&#x2F;multilingual-e5-large &lt;&#x2F;span&gt;&lt;span style=&quot;color:#81a1c1;&quot;&gt;\
+&lt;&#x2F;span&gt;&lt;span&gt;--task feature-extraction  --library-name sentence_transformers  --framework pt  models&#x2F;v2&#x2F;multilingual-e5-large-onnx&#x2F;1&#x2F;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Optimum-CLI requires only one argument: the model name or the path to the model. Optionally, you can include a task flag from a predefined list. If this parameter is not provided, Optimum will attempt to infer it automatically from the model. We will also specify the library name and the original framework of the model.&lt;br &#x2F;&gt;
+You can view the complete list of accepted parameters &lt;a href=&quot;https:&#x2F;&#x2F;huggingface.co&#x2F;docs&#x2F;optimum&#x2F;en&#x2F;exporters&#x2F;onnx&#x2F;usage_guides&#x2F;export_a_model#exporting-a-model-to-onnx-using-the-cli&quot;&gt;here&lt;&#x2F;a&gt;.&lt;&#x2F;p&gt;
+&lt;p&gt;Let’s verify that the output of the converted model matches the output of the original model.&lt;br &#x2F;&gt;
+We’ll use absolute and relative error to assess numerical stability following the conversion.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;connecting-parts-of-the-pipeline&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#connecting-parts-of-the-pipeline&quot; aria-label=&quot;Anchor link for: connecting-parts-of-the-pipeline&quot;&gt;Connecting parts of the pipeline&lt;&#x2F;a&gt;&lt;&#x2F;h3&gt;
+&lt;p&gt;Triton doesn’t automatically handle preprocessing and postprocessing steps,
+so you’ll need to implement these yourself.
+Thankfully, this is straightforward, and I use the same approach as with the baseline deployment.&lt;&#x2F;p&gt;
+&lt;p&gt;Now that our entire pipeline is deployed, do we need to call each part manually from the client?
+Not at all – Triton provides solutions for this.
+There are two options: Model Ensemble and Business Logic Scripting (BLS).
+Model Ensemble is ideal for pipelines that can be represented as directed acyclic graphs (DAGs),
+meaning they have no loops or conditional flows, which works perfectly for our pipeline.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;tensorrt-acceleration&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#tensorrt-acceleration&quot; aria-label=&quot;Anchor link for: tensorrt-acceleration&quot;&gt;TensorRT Acceleration&lt;&#x2F;a&gt;&lt;&#x2F;h3&gt;
+&lt;p&gt;It’s widely known that models using FP32 weights can be accelerated by converting them to FP16.
+ONNX Runtime offers a TensorRT Execution Provider,
+which improves the performance of ONNX models with just-in-time optimization for specific hardware,
+including converting them to FP16.
+While this conversion can significantly boost inference speed,
+it&#x27;s important to ensure that the converted model produces results similar to the original.&lt;&#x2F;p&gt;
+&lt;p&gt;For example, the &lt;code&gt;intfloat&#x2F;multilingual-e5-large&lt;&#x2F;code&gt; model, based on the XLMRoberta architecture,
+includes LayerNorm layers,
+which are known to cause issues when converted to FP16.
+As a result, it’s often better to use mixed precision,
+converting most layers to FP16 while keeping LayerNorm layers in FP32.&lt;&#x2F;p&gt;
+&lt;p&gt;A basic configuration of TensorRT acceleration in a model’s proto-config looks like this:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;prototext&quot; style=&quot;background-color:#2e3440;color:#d8dee9;&quot; class=&quot;language-prototext &quot;&gt;&lt;code class=&quot;language-prototext&quot; data-lang=&quot;prototext&quot;&gt;&lt;span&gt;optimization {
+&lt;&#x2F;span&gt;&lt;span&gt;  execution_accelerators { 
+&lt;&#x2F;span&gt;&lt;span&gt;    gpu_execution_accelerator : [
+&lt;&#x2F;span&gt;&lt;span&gt;      { 
+&lt;&#x2F;span&gt;&lt;span&gt;        name : &amp;quot;tensorrt&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;        parameters { key: &amp;quot;precision_mode&amp;quot; value: &amp;quot;FP16&amp;quot; }
+&lt;&#x2F;span&gt;&lt;span&gt;        parameters { key: &amp;quot;trt_layer_norm_fp32_fallback&amp;quot; value: &amp;quot;true&amp;quot;}
+&lt;&#x2F;span&gt;&lt;span&gt;        parameters { key: &amp;quot;max_workspace_size_bytes&amp;quot; value: &amp;quot;4294967296&amp;quot; }
+&lt;&#x2F;span&gt;&lt;span&gt;      }
+&lt;&#x2F;span&gt;&lt;span&gt;    ]
+&lt;&#x2F;span&gt;&lt;span&gt;  }
+&lt;&#x2F;span&gt;&lt;span&gt;}  
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;According to the &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;triton-inference-server&#x2F;onnxruntime_backend&quot;&gt;Triton ONNX Runtime Backend docs&lt;&#x2F;a&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;precision_mode: The precision used for optimization. Allowed values are &quot;FP32&quot;, &quot;FP16&quot; and &quot;INT8&quot;. The default value is &quot;FP32&quot;.&lt;&#x2F;li&gt;
+&lt;li&gt;max_workspace_size_bytes: The maximum GPU memory the model can use temporarily during execution. The default value is 1GB.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a href=&quot;https:&#x2F;&#x2F;onnxruntime.ai&#x2F;docs&#x2F;execution-providers&#x2F;TensorRT-ExecutionProvider.html#trt_layer_norm_fp32_fallback&quot;&gt;trt_layer_norm_fp32_fallback&lt;&#x2F;a&gt;: force Pow + Reduce ops in layer norm to FP32. Allowed values are “true” and “false”.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;How does the TensorRT Execution Provider optimize a model during runtime?&lt;&#x2F;p&gt;
+&lt;p&gt;First, it attempts to fuse layers wherever possible,
+allowing the provider to replace them with high-performance implementations
+optimized for the specific hardware used during runtime.&lt;&#x2F;p&gt;
+&lt;p&gt;However, building an engine from scratch is a resource-intensive process.
+After layer fusion, the provider runs timing tests to determine the fastest implementations for the target GPU.
+These tests require several inputs, so the model may initially perform slowly right after deployment.
+Fortunately, this warm-up phase can be completed before the model starts handling requests,
+and Triton&#x27;s model definition includes a dedicated section for configuring this.&lt;&#x2F;p&gt;
+&lt;p&gt;To achieve optimal performance, it&#x27;s recommended to experiment with the &lt;code&gt;max_workspace_size_bytes&lt;&#x2F;code&gt; parameter.&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;prototext&quot; style=&quot;background-color:#2e3440;color:#d8dee9;&quot; class=&quot;language-prototext &quot;&gt;&lt;code class=&quot;language-prototext&quot; data-lang=&quot;prototext&quot;&gt;&lt;span&gt;model_warmup [  
+&lt;&#x2F;span&gt;&lt;span&gt; { 
+&lt;&#x2F;span&gt;&lt;span&gt;   name: &amp;quot;onnx_ort_warmup_min&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;   batch_size: 1
+&lt;&#x2F;span&gt;&lt;span&gt;   inputs: {
+&lt;&#x2F;span&gt;&lt;span&gt;     key: &amp;quot;attention_mask&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;     value: { 
+&lt;&#x2F;span&gt;&lt;span&gt;       data_type: TYPE_INT64
+&lt;&#x2F;span&gt;&lt;span&gt;       dims: [ 7 ]
+&lt;&#x2F;span&gt;&lt;span&gt;       input_data_file: &amp;quot;raw_attention_mask&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;     } 
+&lt;&#x2F;span&gt;&lt;span&gt;   } 
+&lt;&#x2F;span&gt;&lt;span&gt;   inputs: {
+&lt;&#x2F;span&gt;&lt;span&gt;     key: &amp;quot;input_ids&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;     value: {
+&lt;&#x2F;span&gt;&lt;span&gt;       data_type: TYPE_INT64
+&lt;&#x2F;span&gt;&lt;span&gt;       dims: [ 7 ]
+&lt;&#x2F;span&gt;&lt;span&gt;       input_data_file: &amp;quot;raw_input_ids&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;     } 
+&lt;&#x2F;span&gt;&lt;span&gt;   } 
+&lt;&#x2F;span&gt;&lt;span&gt; }
+&lt;&#x2F;span&gt;&lt;span&gt;]  
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Since our model requires two inputs, we need to define both, specifying their data types, dimensions, and corresponding data files.
+You can find the script for preparing these data files &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;rproskuryakov&#x2F;triton-sentence-transformer-tutorial&#x2F;blob&#x2F;main&#x2F;scripts&#x2F;serialize_data_for_warmup.py&quot;&gt;here&lt;&#x2F;a&gt;.&lt;&#x2F;p&gt;
+&lt;p&gt;It’s important to note that the TensorRT provider can &lt;a href=&quot;https:&#x2F;&#x2F;huggingface.co&#x2F;docs&#x2F;optimum&#x2F;en&#x2F;onnxruntime&#x2F;usage_guides&#x2F;gpu#tensorrt-engine-build-and-warmup&quot;&gt;rebuild the model on the fly&lt;&#x2F;a&gt;
+if it receives a request with dimensions that differ from those previously encountered.
+To account for this, we need to include a warm-up phase.&lt;&#x2F;p&gt;
+&lt;p&gt;Our model will infer with a maximum batch size of 256,
+and we know the maximum number of input tokens for the &lt;code&gt;multilingual-e5-large&lt;&#x2F;code&gt; model is 512.
+Therefore, we will prepare two sets of warm-up files: one with a batch size of 1 and 4 tokens,
+assuming most inputs will include more tokens, and another with a batch size of 256 and 512 tokens per sample.&lt;&#x2F;p&gt;
+&lt;p&gt;So the final configuration for a warmup will be like this:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;prototext&quot; style=&quot;background-color:#2e3440;color:#d8dee9;&quot; class=&quot;language-prototext &quot;&gt;&lt;code class=&quot;language-prototext&quot; data-lang=&quot;prototext&quot;&gt;&lt;span&gt;model_warmup [
+&lt;&#x2F;span&gt;&lt;span&gt;  { 
+&lt;&#x2F;span&gt;&lt;span&gt;    name: &amp;quot;onnx_ort_warmup_min&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;    batch_size: 256
+&lt;&#x2F;span&gt;&lt;span&gt;    inputs: { 
+&lt;&#x2F;span&gt;&lt;span&gt;      key: &amp;quot;attention_mask&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;      value: { 
+&lt;&#x2F;span&gt;&lt;span&gt;        data_type: TYPE_INT64
+&lt;&#x2F;span&gt;&lt;span&gt;        dims: [ 7 ]
+&lt;&#x2F;span&gt;&lt;span&gt;        input_data_file: &amp;quot;raw_attention_mask&amp;quot; 
+&lt;&#x2F;span&gt;&lt;span&gt;      } 
+&lt;&#x2F;span&gt;&lt;span&gt;    }
+&lt;&#x2F;span&gt;&lt;span&gt;    inputs: { 
+&lt;&#x2F;span&gt;&lt;span&gt;      key: &amp;quot;input_ids&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;      value: { 
+&lt;&#x2F;span&gt;&lt;span&gt;        data_type: TYPE_INT64
+&lt;&#x2F;span&gt;&lt;span&gt;        dims: [ 7 ]
+&lt;&#x2F;span&gt;&lt;span&gt;        input_data_file: &amp;quot;raw_input_ids&amp;quot; 
+&lt;&#x2F;span&gt;&lt;span&gt;      } 
+&lt;&#x2F;span&gt;&lt;span&gt;    } 
+&lt;&#x2F;span&gt;&lt;span&gt;  }, 
+&lt;&#x2F;span&gt;&lt;span&gt;  { 
+&lt;&#x2F;span&gt;&lt;span&gt;    name: &amp;quot;onnx_ort_warmup_max&amp;quot; 
+&lt;&#x2F;span&gt;&lt;span&gt;    batch_size: 256 
+&lt;&#x2F;span&gt;&lt;span&gt;    inputs: { 
+&lt;&#x2F;span&gt;&lt;span&gt;      key: &amp;quot;attention_mask&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;      value: { 
+&lt;&#x2F;span&gt;&lt;span&gt;        data_type: TYPE_INT64
+&lt;&#x2F;span&gt;&lt;span&gt;        dims: [ 512 ]
+&lt;&#x2F;span&gt;&lt;span&gt;        input_data_file: &amp;quot;256&#x2F;raw_attention_mask&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;      } 
+&lt;&#x2F;span&gt;&lt;span&gt;    } 
+&lt;&#x2F;span&gt;&lt;span&gt;    inputs: { 
+&lt;&#x2F;span&gt;&lt;span&gt;      key: &amp;quot;input_ids&amp;quot; 
+&lt;&#x2F;span&gt;&lt;span&gt;      value: { 
+&lt;&#x2F;span&gt;&lt;span&gt;        data_type: TYPE_INT64
+&lt;&#x2F;span&gt;&lt;span&gt;        dims: [ 512 ] 
+&lt;&#x2F;span&gt;&lt;span&gt;        input_data_file: &amp;quot;256&#x2F;raw_input_ids&amp;quot; 
+&lt;&#x2F;span&gt;&lt;span&gt;      } 
+&lt;&#x2F;span&gt;&lt;span&gt;    } 
+&lt;&#x2F;span&gt;&lt;span&gt;  }
+&lt;&#x2F;span&gt;&lt;span&gt;]  
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;benchmarking&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#benchmarking&quot; aria-label=&quot;Anchor link for: benchmarking&quot;&gt;Benchmarking&lt;&#x2F;a&gt;&lt;&#x2F;h2&gt;
+&lt;p&gt;There are many tools available for load testing, with some of the most well-known being the
+&lt;a href=&quot;https:&#x2F;&#x2F;httpd.apache.org&#x2F;docs&#x2F;2.4&#x2F;programs&#x2F;ab.html&quot;&gt;Apache HTTP benchmarking tool (ab)&lt;&#x2F;a&gt;,
+&lt;a href=&quot;https:&#x2F;&#x2F;jmeter.apache.org&#x2F;&quot;&gt;JMeter&lt;&#x2F;a&gt;, and &lt;a href=&quot;https:&#x2F;&#x2F;locust.io&#x2F;&quot;&gt;Locust&lt;&#x2F;a&gt;.&lt;&#x2F;p&gt;
+&lt;p&gt;Yet, Triton has its own benchmarking tool named
+&lt;a href=&quot;https:&#x2F;&#x2F;docs.nvidia.com&#x2F;deeplearning&#x2F;triton-inference-server&#x2F;archives&#x2F;triton-inference-server-2280&#x2F;user-guide&#x2F;docs&#x2F;user_guide&#x2F;perf_analyzer.html&quot;&gt;perf_analyzer&lt;&#x2F;a&gt;.
+It measures latency and throughput sending requests to the server. It&#x27;s optimized for Triton and gives the closest results you can get
+to performance while using official clients. Besides other features, perf_analyzer allows collecting GPU utilization metrics which
+are crucial to model inference.&lt;&#x2F;p&gt;
+&lt;p&gt;For this particular comparison it was run using virtual machine with the following configuration:
+AMD EPYC with Nvidia Ampere A100, 1GPU, 28vCPU, 119Gb RAM. Performance analyzer was run with 1 concurrent request without dynamic batching enabled.&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Triton Backend Type&lt;&#x2F;th&gt;&lt;th&gt;Throughput, infer&#x2F;sec&lt;&#x2F;th&gt;&lt;th&gt;Avg Latency, ms&lt;&#x2F;th&gt;&lt;th&gt;Latency p50, ms&lt;&#x2F;th&gt;&lt;th&gt;Latency p90, ms&lt;&#x2F;th&gt;&lt;th&gt;Latency p99, ms&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Python + Transformers&lt;&#x2F;td&gt;&lt;td&gt;4.9&lt;&#x2F;td&gt;&lt;td&gt;202.9&lt;&#x2F;td&gt;&lt;td&gt;154.9&lt;&#x2F;td&gt;&lt;td&gt;385.7&lt;&#x2F;td&gt;&lt;td&gt;405.7&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;ONNX&lt;&#x2F;td&gt;&lt;td&gt;137.3&lt;&#x2F;td&gt;&lt;td&gt;7.27&lt;&#x2F;td&gt;&lt;td&gt;7.13&lt;&#x2F;td&gt;&lt;td&gt;8.75&lt;&#x2F;td&gt;&lt;td&gt;9.09&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;ONNX + TensorRT&lt;&#x2F;td&gt;&lt;td&gt;150.2&lt;&#x2F;td&gt;&lt;td&gt;6.65&lt;&#x2F;td&gt;&lt;td&gt;6.96&lt;&#x2F;td&gt;&lt;td&gt;7.34&lt;&#x2F;td&gt;&lt;td&gt;7.68&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;The drastic difference can be seen between Python and ONNX backends with ONNX having almost 28x throughput and having 28x less avg latency.
+The difference between ONNX and ONNX with TensorRT acceleration enabled is more subtle. TensorRT gives ~10% of improvement in throughput and avg latency being ~10% lower.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;what-s-next&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#what-s-next&quot; aria-label=&quot;Anchor link for: what-s-next&quot;&gt;What&#x27;s next?&lt;&#x2F;a&gt;&lt;&#x2F;h2&gt;
+&lt;p&gt;This post, of course, cannot cover every aspect of deploying a model with Triton Inference Server.
+However, I’d like to suggest some steps you can take if the results don’t meet your expectations
+or if you need improved performance.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;enhancing-performance&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#enhancing-performance&quot; aria-label=&quot;Anchor link for: enhancing-performance&quot;&gt;Enhancing Performance&lt;&#x2F;a&gt;&lt;&#x2F;h3&gt;
+&lt;p&gt;First, to boost performance, consider using the &lt;code&gt;instance_groups&lt;&#x2F;code&gt; section of the model configuration
+to launch multiple instances of your model.
+More details on this can be found &lt;a href=&quot;https:&#x2F;&#x2F;docs.nvidia.com&#x2F;deeplearning&#x2F;triton-inference-server&#x2F;user-guide&#x2F;docs&#x2F;user_guide&#x2F;model_configuration.html#instance-groups&quot;&gt;here&lt;&#x2F;a&gt;.
+While this approach may enhance performance for some models, it could have the opposite effect for others,
+so it&#x27;s advisable to experiment with your model to find the optimal configuration.&lt;&#x2F;p&gt;
+&lt;p&gt;Be aware that compatibility issues may arise between certain versions of the CUDA driver and ONNX Runtime.
+These issues can lead to failures when starting the model with &lt;code&gt;instance_groups[].count&lt;&#x2F;code&gt; set to more than one,
+particularly when TensorRT acceleration is enabled.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;model-quantization&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#model-quantization&quot; aria-label=&quot;Anchor link for: model-quantization&quot;&gt;Model Quantization&lt;&#x2F;a&gt;&lt;&#x2F;h3&gt;
+&lt;p&gt;Another effective strategy is to quantize your model to int8, int4, or even a two-bit format.
+For int8 quantization, &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;microsoft&#x2F;Olive&quot;&gt;Olive&lt;&#x2F;a&gt; is a recommended tool for optimizing ONNX models
+for specific hardware.&lt;&#x2F;p&gt;
+&lt;p&gt;Alternatively, you can use TensorRT just-in-time conversion and utilize Triton for inference
+through the &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;triton-inference-server&#x2F;tensorrt_backend&quot;&gt;Triton TensorRT backend&lt;&#x2F;a&gt;.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;tuning-triton-parameters&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#tuning-triton-parameters&quot; aria-label=&quot;Anchor link for: tuning-triton-parameters&quot;&gt;Tuning Triton Parameters&lt;&#x2F;a&gt;&lt;&#x2F;h3&gt;
+&lt;p&gt;To fine-tune Triton parameters for inference, you can use the &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;triton-inference-server&#x2F;model_analyzer&quot;&gt;model_analyzer&lt;&#x2F;a&gt;.
+This tool allows you to do an optimization process of configuration parameters via different algorithms such as bayesian optimization.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;NVIDIA&#x2F;TensorRT&#x2F;tree&#x2F;main&#x2F;tools&#x2F;Polygraphy&quot;&gt;Polygraphy&lt;&#x2F;a&gt; is another valuable tool
+for analyzing model behavior, especially if your model performs differently on TensorRT.
+It enables you to compare the inputs and outputs of an ONNX model against the corresponding TensorRT model, layer by layer.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;custom-triton-backend&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#custom-triton-backend&quot; aria-label=&quot;Anchor link for: custom-triton-backend&quot;&gt;Custom Triton Backend&lt;&#x2F;a&gt;&lt;&#x2F;h3&gt;
+&lt;p&gt;If you&#x27;ve optimized your model as much as possible and still need better performance, consider speeding up preprocessing by developing a custom backend, perhaps in Rust.
+This approach can provide a performance boost since the underlying implementation of transformer tokenizers is in Rust.
+When executing in Python, there is some overhead associated with transferring data between the Python interpreter and Rust.&lt;&#x2F;p&gt;
+&lt;p&gt;You can also enhance post-processing through batching and offloading calculations to a GPU or by rewriting the code in Rust.
+You can find high-level requirements for implementing a custom Triton backend &lt;a href=&quot;https:&#x2F;&#x2F;docs.nvidia.com&#x2F;deeplearning&#x2F;triton-inference-server&#x2F;archives&#x2F;triton_inference_server_220&#x2F;user-guide&#x2F;docs&#x2F;backend.html#backend-shared-library&quot;&gt;here&lt;&#x2F;a&gt;.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;bonus-production-considerations&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#bonus-production-considerations&quot; aria-label=&quot;Anchor link for: bonus-production-considerations&quot;&gt;Bonus: production considerations&lt;&#x2F;a&gt;&lt;&#x2F;h2&gt;
+&lt;p&gt;In a real production environment, reliability and observability are crucial.
+This includes effective monitoring and scalability.
+To monitor machine learning models, OpenTelemetry, an open-source framework for collecting,
+exporting, and generating metrics, logs, and traces, can be used.
+Triton &lt;a href=&quot;https:&#x2F;&#x2F;docs.nvidia.com&#x2F;deeplearning&#x2F;triton-inference-server&#x2F;user-guide&#x2F;docs&#x2F;user_guide&#x2F;trace.html&quot;&gt;supports&lt;&#x2F;a&gt;
+OpenTelemetry, enabling the generation of traces for inference requests.&lt;&#x2F;p&gt;
+&lt;p&gt;Most companies rely on Prometheus as a metrics database,
+along with Grafana for visual dashboards and alerts.
+Triton also &lt;a href=&quot;https:&#x2F;&#x2F;docs.nvidia.com&#x2F;deeplearning&#x2F;triton-inference-server&#x2F;user-guide&#x2F;docs&#x2F;user_guide&#x2F;metrics.html&quot;&gt;supports&lt;&#x2F;a&gt;
+Prometheus metrics, including GPU performance data and request statistics, making it easier to monitor and optimize models in production.&lt;&#x2F;p&gt;
+&lt;p&gt;Scalability is another key concern in production environments.
+Tools like &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;SeldonIO&#x2F;seldon-core&quot;&gt;Seldon-Core&lt;&#x2F;a&gt; are designed to address this challenge.
+Seldon-Core facilitates the deployment of machine learning models on Kubernetes,
+introducing the concept of a &quot;server&quot; that acts as the backend for a model.
+It supports popular frameworks like scikit-learn, XGBoost, and Triton.
+With Seldon, you can run Triton instances while benefiting from built-in features such as automatic scaling,
+A&#x2F;B testing, Canary deployments, and more.&lt;&#x2F;p&gt;
+&lt;p&gt;You might also explore KServe,
+which offers the helpful feature of scaling deployments down to zero when there is no incoming traffic.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;resources&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#resources&quot; aria-label=&quot;Anchor link for: resources&quot;&gt;Resources&lt;&#x2F;a&gt;&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;https:&#x2F;&#x2F;docs.nvidia.com&#x2F;deeplearning&#x2F;triton-inference-server&#x2F;user-guide&#x2F;docs&#x2F;index.html&quot;&gt;Triton Inference Server&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;triton-inference-server&#x2F;onnxruntime_backend&quot;&gt;Triton Backend for the ONNX Runtime&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;triton-inference-server&#x2F;tensorrt_backend&quot;&gt;Triton Backend for TensorRT&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a href=&quot;https:&#x2F;&#x2F;huggingface.co&#x2F;docs&#x2F;optimum&#x2F;en&#x2F;index&quot;&gt;Optimum: Transformers Extension&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;NVIDIA&#x2F;TensorRT&#x2F;tree&#x2F;main&#x2F;tools&#x2F;Polygraphy&quot;&gt;Polygraphy: A Deep Learning Inference Prototyping and Debugging Toolkit&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;microsoft&#x2F;Olive&quot;&gt;Olive: Hardware-aware Model Optimization Tool&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;SeldonIO&#x2F;seldon-core&quot;&gt;Seldon Core: Tool to deploy ML Models with Kubernetes at Scale.&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+</feed>
