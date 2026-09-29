@@ -2,7 +2,7 @@
 title = "Interleaving, a Retrieval Online Evaluation Method Nobody Talks About. Part 2"
 date = "2025-07-31"
 draft = true
-description = "The second part of the series on interleaving. It introduces Team-Draft interleaving, discusses the limitations of interleaving compared to A/B-testing, and shows how Netflix, Airbnb, DoorDash, Amazon and others use it to speed up ranking experiments."
+description = "Team-Draft interleaving, the limitations of interleaving versus A/B-tests, and how Netflix, Airbnb, Amazon and others use it to speed up ranking experiments."
 [taxonomies]
 tags=["search", "A/B-testing", "experimenting", "interleaving"]
 [extra]
