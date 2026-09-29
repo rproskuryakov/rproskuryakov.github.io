@@ -45,7 +45,7 @@ In this part, I will walk you through:
 * the general framework every interleaving method fits into: interleaving policy and credit attribution;
 * the bias that makes balanced interleaving unreliable.
 
-In the [second part](@/posts/interleaving-team-draft-in-practice.md), we will look at Team-Draft interleaving,
+In the second part, coming soon, we will look at Team-Draft interleaving,
 the limitations of interleaving and how the industry uses it.
 So, let's get started!
 
@@ -278,7 +278,7 @@ We have seen that interleaving compares two rankers on the same users and querie
 and that balanced interleaving gives a simple way to do it.
 Unfortunately, it also prefers one of the rankers even when users click at random.
 
-In the [second part](@/posts/interleaving-team-draft-in-practice.md), I will go through:
+In the second part, which is coming soon, I will go through:
 * Team-Draft interleaving, which fixes this bias and is the method most companies use in practice;
 * the disadvantages of interleaving you should be aware of before replacing your A/B-tests;
 * the sensitivity gains reported in the literature and by the industry;
