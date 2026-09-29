@@ -142,6 +142,19 @@
         </script>
     {% endif %}
 
+    {# Mermaid diagrams, enabled per page with extra.mermaid = true #}
+    {% if page.extra.mermaid | default(value=false) %}
+        <script type="module">
+            import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+            mermaid.initialize({ startOnLoad: true, theme: "neutral" });
+        </script>
+        <style>
+            /* The theme caps every svg at 15px (meant for icons) */
+            pre.mermaid { text-align: center; }
+            pre.mermaid svg { max-height: none; }
+        </style>
+    {% endif %}
+
     {# RSS #}
     <link rel="alternate" type="application/atom+xml" title="{{ config.title }}" href="{{ get_url(path="atom.xml", trailing_slash=false) }}">
 
